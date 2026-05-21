@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elba Rodriguez Avalós - Música, Historia y Conciertos Infantiles</title>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fbf9f4;
+            color: #3d312a;
+        }
+
+        /* --- BANNER INTERACTIVO CON VIDEO DE FONDO (HERO) --- */
+        .banner-video-contenedor {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            overflow: hidden;
+            border-bottom: 5px solid #e1b12c;
+            cursor: pointer;
+        }
+
+        /* El video se estira para cubrir todo el fondo del banner */
+        .video-fondo-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -42%);
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .capa-oscura-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6));
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .capa-oscura-banner h1 {
+            margin: 0;
+            font-size: 46px;
+            font-family: 'Georgia', serif;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        .capa-oscura-banner p {
+            margin: 15px auto 0 auto;
+            font-size: 20px;
+            max-width: 600px;
+            color: #f5f6fa;
+            font-style: italic;
+            line-height: 1.5;
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+        }
+
+        .btn-audio-banner {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(61, 49, 42, 0.85);
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 10;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-audio-banner:hover {
+            background: #cd8433;
+            border-color: #ffffff;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        /* --- ZONA DE REDES CON TIRA ROSA ANCHA DE TRASFONDO --- */
+        .seccion-contacto {
+            max-width: 1100px;
+            margin: 50px auto; /* Aumentado un poco el margen superior */
+            padding: 30px 20px; /* Aumentado el padding vertical */
+            text-align: center;
+            position: relative;
+        }
+
+        /* Esta es la TIRA rosa ancha decorativa que cubre los botones */
+        .seccion-contacto::before {
+            content: "";
+            position: absolute;
+            /* Centrado vertical detrás de los botones */
+            top: 50%;
+            transform: translateY(-20%); /* Ajuste fino para centrarla detrás del bloque de botones */
+            left: 2%; /* Ligeramente más ancha que los botones */
+            width: 96%;
+            height: 120px; /* Grosor de la tira (mucho más ancha, como una franja) */
+            background-color: #ffe4e8; /* Color rosa pastel suave */
+            z-index: 1; /* Queda por debajo de las tarjetas */
+            border-radius: 15px; /* Bordes suaves */
+            box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2); /* Sutil sombra rosa */
+        }
+
+        .seccion-contacto h2 {
+            font-family: 'Georgia', serif;
+            font-size: 24px;
+            color: #4a3b32;
+            margin-bottom: 35px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .grid-contacto {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px; /* Aumentado el espacio entre botones */
+            position: relative;
+            z-index: 2; /* Obliga a los botones a estar por encima de la tira rosa */
+            padding: 0 10px; /* Espacio interno para que no peguen al borde de la tira */
+        }
+
+        .tarjeta-contacto {
+            background: #ffffff;
+            padding: 18px 12px; /* Aumentado el padding para botones más grandes */
+            border-radius: 12px;
+            border: 1px solid #e8e1d7;
+            text-decoration: none;
+            color: #574336;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); /* Sombra un poco más visible */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tarjeta-contacto:hover {
+            background: #cd8433;
+            color: #ffffff;
+            border-color: #cd8433;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(205, 132, 51, 0.25);
+        }
+
+        .valor-contacto {
+            font-size: 12px;
+            font-weight: normal;
+            color: #8c7a6b;
+            word-break: break-all;
+        }
+
+        .tarjeta-contacto:hover .valor-contacto {
+            color: #f5f6fa;
+        }
+
+        /* --- ZONA DE HISTORIA PEGAR AL MARGEN IZQUIERDO --- */
+        .seccion-historia {
+            max-width: 1200px;
+            margin: 60px auto 80px auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: flex-start; /* Empuja el contenedor hacia la IZQUIERDA */
+        }
+
+        .cuadro-historia {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid #f1e9db;
+            box-shadow: 0 6px 20px rgba(61, 49, 42, 0.04);
+            max-width: 650px; /* Tamaño del bloque de texto */
+            width: 100%;
+            text-align: left; /* Alinea los títulos y textos a la IZQUIERDA */
+        }
+
+        .cuadro-historia h2 {
+            margin-top: 0;
+            font-family: 'Georgia', serif;
+            font-size: 28px;
+            color: #cd8433;
+            border-bottom: 2px solid #f1e9db;
+            padding-bottom: 10px;
+            text-align: left; /* Título también a la izquierda */
+        }
+
+        .texto-historia p {
+            font-size: 16px;
+            line-height: 1.8; /* Aumentado ligeramente para mejor lectura */
+            color: #4a3b32;
+            margin-bottom: 20px;
+            text-align: left; /* Párrafos a la izquierda */
+        }
+
+        /* --- PIE DE PÁGINA --- */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            background-color: #3d312a;
+            color: #f5f6fa;
+            font-size: 14px;
+        }
+
+        /* --- ADAPTACIÓN A CELULARES --- */
+        @media (max-width: 850px) {
+            .grid-contacto {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                max-width: 500px;
+                margin: 0 auto;
+                padding: 10px;
+            }
+            /* Ajustamos la tira en celulares para que no cruce feo verticalmente, la hacemos fondo */
+            .seccion-contacto::before {
+                top: 15%; /* Mueve el fondo detrás de la lista */
+                left: 0;
+                width: 100%;
+                height: 75%; /* Cubre la zona de la lista */
+            }
+            .seccion-historia {
+                justify-content: center; /* En celular vuelve al centro para que no se corte */
+            }
+        }
+
+        @media (max-width: 600px) {
+            .banner-video-contenedor { height: 320px; }
+            .capa-oscura-banner h1 { font-size: 32px; }
+            .capa-oscura-banner p { font-size: 16px; }
+            .cuadro-historia { padding: 30px 20px; }
+            .cuadro-historia h2 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="banner-video-contenedor" onclick="abrirVideoOriginal(event)">
+        <video id="videoBanner" class="video-fondo-banner" autoplay muted loop playsinline>
+            <source src="videos/video-banner.mp4" type="video/mp4">
+            Tu navegador no soporta video.
+        </video>
+
+        <div class="capa-oscura-banner">
+            <h1>Elba Rodriguez Avalós</h1>
+            <p style="font-size: 18px; text-transform: lowercase;">"cantautora de musica para las infancias"</p>
+        </div>
+
+        <button id="btnAcustico" class="btn-audio-banner">
+            🔇 Sin Sonido
+        </button>
+    </div>
+
+    <section class="seccion-contacto">
+        <h2>Contrataciones & Redes Sociales</h2>
+        <div class="grid-contacto">
+            
+            <a href="mailto:contacto@maestraelba.com" class="tarjeta-contacto">
+                ✉️ Correo Electrónico
+                <span class="valor-contacto">contacto@maestraelba.com</span>
+            </a>
+
+            <a href="https://youtube.com" target="_blank" class="tarjeta-contacto">
+                ▶️ YouTube Oficial
+                <span class="valor-contacto">/MaestraElbaVideos</span>
+            </a>
+
+            <a href="https://facebook.com" target="_blank" class="tarjeta-contacto">
+                👤 Facebook Oficial
+                <span class="valor-contacto">/MaestraElbaMusica</span>
+            </a>
+
+            <a href="https://instagram.com" target="_blank" class="tarjeta-contacto">
+                📸 Instagram
+                <span class="valor-contacto">@maestraelba_infantil</span>
+            </a>
+
+            <a href="https://tiktok.com" target="_blank" class="tarjeta-contacto">
+                🎵 TikTok Infantil
+                <span class="valor-contacto">@maestraelba.musica</span>
+            </a>
+
+        </div>
+    </section>
+
+    <section class="seccion-historia">
+        <div class="cuadro-historia">
+            <h2>Una Trayectoria Histórica</h2>
+            <div class="texto-historia">
+                <p><strong>Cantautora, docente y pionera cultural.</strong> Desde 1985, acumulando ya cuatro décadas de trayectoria activa, Elba Rodriguez Avalós ha dedicado su vida enteramente a crear universos musicales para las infancias de Morelia y de todo el país, consolidando un proyecto artístico educativo de valor invaluable.</p>
+                
+                <p>Marcó un hito histórico en los medios de comunicación locales al convertirse en la <strong>primera mujer locutora en la radio de Morelia</strong>, abriendo camino para las futuras generaciones de comunicadoras con su voz cercana y profesional.</p>
+                
+                <p>Actualmente, bajo una activa colaboración institucional, realiza múltiples presentaciones mensuales llenando de canciones, anécdotas y sonrisas los patios escolares, teatros y centros culturales, demostrando que la música infantil de calidad sigue más viva que nunca.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Elba Rodriguez Avalós - Diseñado con orgullo por Yesos Polo Digital</p>
+    </footer>
+
+    <script>
+        const video = document.getElementById('videoBanner');
+        const btnAcustico = document.getElementById('btnAcustico');
+
+        btnAcustico.addEventListener('click', (evento) => {
+            evento.stopPropagation(); 
+            if (video.muted) {
+                video.muted = false;
+                btnAcustico.innerHTML = '🔊 Con Sonido';
+                btnAcustico.style.background = '#cd8433';
+            } else {
+                video.muted = true;
+                btnAcustico.innerHTML = '🔇 Sin Sonido';
+                btnAcustico.style.background = 'rgba(61, 49, 42, 0.85)';
+            }
+        });
+
+        function abrirVideoOriginal(evento) {
+            window.open('videos/presentacion-abuela.mp4', '_blank');
+        }
+    </script>
+
+</body>
+</html>
