@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elba Rodriguez Avalós - Música, Historia y Conciertos Infantiles</title>
+    <title>Elba Rodriguez Avalos - Música, Historia y Conciertos Infantiles</title>
     <style>
         /* --- ESTILOS GENERALES --- */
         body {
@@ -14,38 +14,28 @@
             color: #3d312a;
         }
 
-        /* --- BANNER INTERACTIVO CON VIDEO DE FONDO (HERO) --- */
-        .banner-video-contenedor {
+        /* --- BANNER REAL (IMAGEN ESTÁTICA) --- */
+        .banner-contenedor {
             position: relative;
             width: 100%;
             height: 380px;
             overflow: hidden;
             border-bottom: 5px solid #e1b12c;
-            cursor: pointer;
         }
 
-        /* El video se estira para cubrir todo el fondo del banner */
-        .video-fondo-banner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            transform: translate(-50%, -42%);
+        .banner-img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            z-index: 1;
+            object-position: center top;
+            display: block;
         }
 
         .capa-oscura-banner {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6));
-            z-index: 2;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.58));
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -61,7 +51,7 @@
             font-family: 'Georgia', serif;
             color: #ffffff;
             letter-spacing: 1px;
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
         }
 
         .capa-oscura-banner p {
@@ -71,152 +61,181 @@
             color: #f5f6fa;
             font-style: italic;
             line-height: 1.5;
-            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+            text-shadow: 1px 1px 6px rgba(0,0,0,0.7);
         }
 
-        .btn-audio-banner {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(61, 49, 42, 0.85);
-            color: #ffffff;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            padding: 8px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
+        /* --- BANDA DE REDES SOCIALES --- */
+        .banda-redes {
             display: flex;
-            align-items: center;
-            gap: 6px;
-            z-index: 10;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-audio-banner:hover {
-            background: #cd8433;
-            border-color: #ffffff;
-            transform: translateX(-50%) scale(1.05);
-        }
-
-        /* --- ZONA DE REDES CON TIRA ROSA ANCHA DE TRASFONDO --- */
-        .seccion-contacto {
-            max-width: 1100px;
-            margin: 50px auto; /* Aumentado un poco el margen superior */
-            padding: 30px 20px; /* Aumentado el padding vertical */
-            text-align: center;
-            position: relative;
-        }
-
-        /* Esta es la TIRA rosa ancha decorativa que cubre los botones */
-        .seccion-contacto::before {
-            content: "";
-            position: absolute;
-            /* Centrado vertical detrás de los botones */
-            top: 50%;
-            transform: translateY(-20%); /* Ajuste fino para centrarla detrás del bloque de botones */
-            left: 2%; /* Ligeramente más ancha que los botones */
-            width: 96%;
-            height: 120px; /* Grosor de la tira (mucho más ancha, como una franja) */
-            background-color: #ffe4e8; /* Color rosa pastel suave */
-            z-index: 1; /* Queda por debajo de las tarjetas */
-            border-radius: 15px; /* Bordes suaves */
-            box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2); /* Sutil sombra rosa */
-        }
-
-        .seccion-contacto h2 {
-            font-family: 'Georgia', serif;
-            font-size: 24px;
-            color: #4a3b32;
-            margin-bottom: 35px;
-            position: relative;
-            z-index: 2;
-        }
-
-        .grid-contacto {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px; /* Aumentado el espacio entre botones */
-            position: relative;
-            z-index: 2; /* Obliga a los botones a estar por encima de la tira rosa */
-            padding: 0 10px; /* Espacio interno para que no peguen al borde de la tira */
-        }
-
-        .tarjeta-contacto {
-            background: #ffffff;
-            padding: 18px 12px; /* Aumentado el padding para botones más grandes */
-            border-radius: 12px;
-            border: 1px solid #e8e1d7;
-            text-decoration: none;
-            color: #574336;
-            font-weight: bold;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); /* Sombra un poco más visible */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            gap: 8px;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 18px 20px;
+            background: #fff;
+            border-bottom: 1px solid #eee;
         }
-
-        .tarjeta-contacto:hover {
-            background: #cd8433;
-            color: #ffffff;
-            border-color: #cd8433;
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(205, 132, 51, 0.25);
-        }
-
-        .valor-contacto {
-            font-size: 12px;
-            font-weight: normal;
-            color: #8c7a6b;
-            word-break: break-all;
-        }
-
-        .tarjeta-contacto:hover .valor-contacto {
-            color: #f5f6fa;
-        }
-
-        /* --- ZONA DE HISTORIA PEGAR AL MARGEN IZQUIERDO --- */
-        .seccion-historia {
-            max-width: 1200px;
-            margin: 60px auto 80px auto;
-            padding: 0 20px;
+        .red-social {
             display: flex;
-            justify-content: flex-start; /* Empuja el contenedor hacia la IZQUIERDA */
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            transition: transform 0.2s, filter 0.2s;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .red-social:hover { transform: translateY(-2px); filter: brightness(1.12); }
+        .red-social svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .red-social.correo  { background: #cd8433; }
+        .red-social.yt      { background: #FF0000; }
+        .red-social.fb      { background: #1877F2; }
+        .red-social.ig      { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+        .red-social.tt      { background: #000; }
+        @media (max-width: 500px) {
+            .red-social span { display: none; }
+            .red-social { padding: 10px; border-radius: 50%; }
+            .banda-redes { gap: 10px; }
         }
 
-        .cuadro-historia {
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .contenedor-principal {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- TÍTULO DE SECCIÓN --- */
+        .seccion-titulo {
+            text-align: center;
+            margin: 48px 0 10px 0;
+            font-size: 38px;
+            font-family: 'Georgia', serif;
+            color: #3d312a;
+            font-weight: 700;
+            position: relative;
+        }
+        .seccion-titulo::after {
+            content: '';
+            display: block;
+            width: 70px;
+            height: 3px;
+            background: #e1b12c;
+            margin: 10px auto 0 auto;
+            border-radius: 2px;
+        }
+
+        /* --- BOTONES DE SECCIÓN --- */
+        .botones-seccion {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 24px 0 40px 0;
+        }
+        .btn-seccion {
+            padding: 16px 48px;
+            border-radius: 35px;
+            border: 3px solid #3d312a;
+            background: #fff;
+            color: #3d312a;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-seccion:hover {
+            background: #cd8433;
+            border-color: #cd8433;
+            color: #fff;
+        }
+        .btn-seccion.activo {
+            background: #cd8433;
+            border-color: #cd8433;
+            color: #fff;
+        }
+        @media (max-width: 500px) {
+            .btn-seccion {
+                padding: 12px 24px;
+                font-size: 15px;
+            }
+        }
+
+        /* --- ZONAS DE CONTENIDO --- */
+        .zona-contenido { display: none; margin-bottom: 60px; }
+        .zona-contenido.activa { display: block; }
+
+        /* --- BIOGRAFÍA --- */
+        .bio-bloque {
             background: #ffffff;
-            padding: 40px;
+            padding: 36px 40px;
             border-radius: 15px;
             border: 1px solid #f1e9db;
-            box-shadow: 0 6px 20px rgba(61, 49, 42, 0.04);
-            max-width: 650px; /* Tamaño del bloque de texto */
-            width: 100%;
-            text-align: left; /* Alinea los títulos y textos a la IZQUIERDA */
+            box-shadow: 0 6px 20px rgba(61,49,42,0.04);
         }
-
-        .cuadro-historia h2 {
+        .bio-bloque h2 {
             margin-top: 0;
             font-family: 'Georgia', serif;
-            font-size: 28px;
+            font-size: 26px;
             color: #cd8433;
             border-bottom: 2px solid #f1e9db;
             padding-bottom: 10px;
-            text-align: left; /* Título también a la izquierda */
+        }
+        .bio-bloque p {
+            font-size: 16px;
+            line-height: 1.85;
+            color: #4a3b32;
+            margin-bottom: 18px;
         }
 
-        .texto-historia p {
+        /* --- VIDEOS --- */
+        .video-contenedor {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            margin-bottom: 12px;
+        }
+        .video-contenedor iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+        .video-descripcion {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #5a4b42;
+            margin-bottom: 36px;
+            padding: 0 4px;
+        }
+        .video-descripcion em {
+            color: #999;
+            font-style: italic;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        /* --- PROYECTOS --- */
+        .proyectos-intro {
             font-size: 16px;
-            line-height: 1.8; /* Aumentado ligeramente para mejor lectura */
+            line-height: 1.8;
             color: #4a3b32;
-            margin-bottom: 20px;
-            text-align: left; /* Párrafos a la izquierda */
+            background: #fff;
+            border-left: 4px solid #e1b12c;
+            border-radius: 0 10px 10px 0;
+            padding: 16px 20px;
+            margin-bottom: 30px;
         }
 
         /* --- PIE DE PÁGINA --- */
@@ -228,123 +247,139 @@
             font-size: 14px;
         }
 
-        /* --- ADAPTACIÓN A CELULARES --- */
-        @media (max-width: 850px) {
-            .grid-contacto {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                max-width: 500px;
-                margin: 0 auto;
-                padding: 10px;
-            }
-            /* Ajustamos la tira en celulares para que no cruce feo verticalmente, la hacemos fondo */
-            .seccion-contacto::before {
-                top: 15%; /* Mueve el fondo detrás de la lista */
-                left: 0;
-                width: 100%;
-                height: 75%; /* Cubre la zona de la lista */
-            }
-            .seccion-historia {
-                justify-content: center; /* En celular vuelve al centro para que no se corte */
-            }
-        }
-
+        /* --- RESPONSIVE --- */
         @media (max-width: 600px) {
-            .banner-video-contenedor { height: 320px; }
-            .capa-oscura-banner h1 { font-size: 32px; }
-            .capa-oscura-banner p { font-size: 16px; }
-            .cuadro-historia { padding: 30px 20px; }
-            .cuadro-historia h2 { font-size: 24px; }
+            .banner-contenedor { height: 260px; }
+            .capa-oscura-banner h1 { font-size: 28px; }
+            .capa-oscura-banner p { font-size: 15px; }
+            .bio-bloque { padding: 24px 18px; }
+            .bio-bloque h2 { font-size: 22px; }
+            .seccion-titulo { font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="banner-video-contenedor" onclick="abrirVideoOriginal(event)">
-        <video id="videoBanner" class="video-fondo-banner" autoplay muted loop playsinline>
-            <source src="videos/video-banner.mp4" type="video/mp4">
-            Tu navegador no soporta video.
-        </video>
-
+    <!-- ═══ BANNER REAL ═══ -->
+    <div class="banner-contenedor">
+        <img class="banner-img" src="imagenes/banner-elba.webp"
+             alt="Elba Rodriguez Avalos"
+             onerror="this.style.background='linear-gradient(135deg,#3d312a,#7a5a2a)'">
         <div class="capa-oscura-banner">
-            <h1>Elba Rodriguez Avalós</h1>
-            <p style="font-size: 18px; text-transform: lowercase;">"cantautora de musica para las infancias"</p>
+            <h1>Elba Rodriguez Avalos</h1>
+            <p>"cantautora de música para las infancias"</p>
         </div>
-
-        <button id="btnAcustico" class="btn-audio-banner">
-            🔇 Sin Sonido
-        </button>
     </div>
 
-    <section class="seccion-contacto">
-        <h2>Contrataciones & Redes Sociales</h2>
-        <div class="grid-contacto">
-            
-            <a href="mailto:contacto@maestraelba.com" class="tarjeta-contacto">
-                ✉️ Correo Electrónico
-                <span class="valor-contacto">contacto@maestraelba.com</span>
-            </a>
+    <!-- ═══ BANDA DE REDES SOCIALES ═══ -->
+    <div class="banda-redes">
 
-            <a href="https://youtube.com" target="_blank" class="tarjeta-contacto">
-                ▶️ YouTube Oficial
-                <span class="valor-contacto">/MaestraElbaVideos</span>
-            </a>
+        <a class="red-social correo" href="mailto:contacto@maestraelba.com" aria-label="Correo">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span>Correo</span>
+        </a>
 
-            <a href="https://facebook.com" target="_blank" class="tarjeta-contacto">
-                👤 Facebook Oficial
-                <span class="valor-contacto">/MaestraElbaMusica</span>
-            </a>
+        <a class="red-social yt" href="https://youtube.com" target="_blank" aria-label="YouTube">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <span>YouTube</span>
+        </a>
 
-            <a href="https://instagram.com" target="_blank" class="tarjeta-contacto">
-                📸 Instagram
-                <span class="valor-contacto">@maestraelba_infantil</span>
-            </a>
+        <a class="red-social fb" href="https://facebook.com" target="_blank" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            <span>Facebook</span>
+        </a>
 
-            <a href="https://tiktok.com" target="_blank" class="tarjeta-contacto">
-                🎵 TikTok Infantil
-                <span class="valor-contacto">@maestraelba.musica</span>
-            </a>
+        <a class="red-social ig" href="https://instagram.com" target="_blank" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+            <span>Instagram</span>
+        </a>
 
+        <a class="red-social tt" href="https://tiktok.com" target="_blank" aria-label="TikTok">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+            <span>TikTok</span>
+        </a>
+
+    </div>
+
+    <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+    <div class="contenedor-principal">
+
+        <h2 class="seccion-titulo">Elba Rodriguez Avalos</h2>
+
+        <!-- Botones de navegación de sección -->
+        <div class="botones-seccion">
+            <button class="btn-seccion activo" id="btn-biografia" onclick="mostrarSeccion('biografia')">Biografía</button>
+            <button class="btn-seccion" id="btn-videos"    onclick="mostrarSeccion('videos')">Videos</button>
+            <button class="btn-seccion" id="btn-proyectos" onclick="mostrarSeccion('proyectos')">Proyectos</button>
         </div>
-    </section>
 
-    <section class="seccion-historia">
-        <div class="cuadro-historia">
-            <h2>Una Trayectoria Histórica</h2>
-            <div class="texto-historia">
+        <!-- ── ZONA BIOGRAFÍA ── -->
+        <div class="zona-contenido activa" id="zona-biografia">
+            <div class="bio-bloque">
+                <h2>Una Trayectoria Histórica</h2>
                 <p><strong>Cantautora, docente y pionera cultural.</strong> Desde 1985, acumulando ya cuatro décadas de trayectoria activa, Elba Rodriguez Avalós ha dedicado su vida enteramente a crear universos musicales para las infancias de Morelia y de todo el país, consolidando un proyecto artístico educativo de valor invaluable.</p>
-                
                 <p>Marcó un hito histórico en los medios de comunicación locales al convertirse en la <strong>primera mujer locutora en la radio de Morelia</strong>, abriendo camino para las futuras generaciones de comunicadoras con su voz cercana y profesional.</p>
-                
                 <p>Actualmente, bajo una activa colaboración institucional, realiza múltiples presentaciones mensuales llenando de canciones, anécdotas y sonrisas los patios escolares, teatros y centros culturales, demostrando que la música infantil de calidad sigue más viva que nunca.</p>
             </div>
         </div>
-    </section>
+
+        <!-- ── ZONA VIDEOS ── -->
+        <div class="zona-contenido" id="zona-videos">
+
+            <div class="video-contenedor">
+                <iframe src="https://www.youtube.com/embed/PLACEHOLDER1?rel=0&modestbranding=1"
+                        title="Video de Elba Rodriguez Avalos"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+            </div>
+            <div class="video-descripcion">
+                <em>— Descripción del video de arriba</em>
+                Aquí puedes añadir una descripción del primer video de Elba.
+            </div>
+
+            <div class="video-contenedor">
+                <iframe src="https://www.youtube.com/embed/PLACEHOLDER2?rel=0&modestbranding=1"
+                        title="Video de Elba Rodriguez Avalos 2"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+            </div>
+            <div class="video-descripcion">
+                <em>— Descripción del video de arriba</em>
+                Aquí puedes añadir una descripción del segundo video de Elba.
+            </div>
+
+        </div>
+
+        <!-- ── ZONA PROYECTOS ── -->
+        <div class="zona-contenido" id="zona-proyectos">
+            <div class="proyectos-intro">
+                Esta sección está lista para mostrar los proyectos, colaboraciones institucionales y apariciones en medios de Elba Rodriguez Avalos.
+            </div>
+        </div>
+
+    </div>
 
     <footer>
-        <p>&copy; 2026 Elba Rodriguez Avalós - Diseñado con orgullo por Yesos Polo Digital</p>
+        <p>&copy; 2026 Elba Rodriguez Avalós — Diseñado con orgullo por Yesos Polo Digital</p>
     </footer>
 
     <script>
-        const video = document.getElementById('videoBanner');
-        const btnAcustico = document.getElementById('btnAcustico');
+        function mostrarSeccion(cual) {
+            // Ocultar todas las zonas
+            document.querySelectorAll('.zona-contenido').forEach(z => z.classList.remove('activa'));
+            // Desactivar todos los botones
+            document.querySelectorAll('.btn-seccion').forEach(b => b.classList.remove('activo'));
 
-        btnAcustico.addEventListener('click', (evento) => {
-            evento.stopPropagation(); 
-            if (video.muted) {
-                video.muted = false;
-                btnAcustico.innerHTML = '🔊 Con Sonido';
-                btnAcustico.style.background = '#cd8433';
-            } else {
-                video.muted = true;
-                btnAcustico.innerHTML = '🔇 Sin Sonido';
-                btnAcustico.style.background = 'rgba(61, 49, 42, 0.85)';
-            }
-        });
-
-        function abrirVideoOriginal(evento) {
-            window.open('videos/presentacion-abuela.mp4', '_blank');
+            // Mostrar la zona elegida
+            document.getElementById('zona-' + cual).classList.add('activa');
+            // Marcar botón activo
+            document.getElementById('btn-' + cual).classList.add('activo');
         }
+
+        // Biografía activa por defecto al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            mostrarSeccion('biografia');
+        });
     </script>
 
 </body>
