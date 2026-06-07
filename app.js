@@ -284,7 +284,7 @@ function renderizarCatalogoCompleto() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN MÚSICA (GRID DE 3 COLUMNAS — iframes embebidos)
+// RENDERIZADO SECCIÓN MÚSICA — thumbnail + play (un video a la vez)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarSeccionMusica() {
     var panelMusica = document.getElementById('panelPillMusica');
@@ -296,15 +296,12 @@ function renderizarSeccionMusica() {
         contenedorMusica.id = 'contenedorMusica';
         panelMusica.appendChild(contenedorMusica);
     }
-    contenedorMusica.innerHTML = '';
+    // Si ya fue renderizado, no volver a hacerlo
+    if (contenedorMusica.childElementCount > 0) return;
+
     contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar por columna 'categoria' normalizada = 'musica'
-    var musicaItems = listaProductos.filter(function(p) {
-        return p.categoriaNorm === 'musica';
-    });
-
-    // Ordenar: más reciente primero
+    var musicaItems = listaProductos.filter(function(p) { return p.categoriaNorm === 'musica'; });
     musicaItems.sort(function(a, b) {
         var dA = new Date(a.fecha), dB = new Date(b.fecha);
         if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
@@ -313,59 +310,78 @@ function renderizarSeccionMusica() {
 
     if (musicaItems.length === 0) {
         contenedorMusica.style.display = 'block';
-        contenedorMusica.innerHTML = '<p style="text-align:center; width:100%; color:#888; padding:40px 0;">Próximamente agregaremos contenido musical.</p>';
+        contenedorMusica.innerHTML = '<p style="text-align:center;width:100%;color:#888;padding:40px 0;">Próximamente agregaremos contenido musical.</p>';
         return;
     }
 
     musicaItems.forEach(function(p) {
-        var card = document.createElement('div');
-        card.className = 'card-musica';
-        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);';
+        var ytId = p.videoYoutube ? _extraerYTId(p.videoYoutube) : '';
+        var thumbSrc = ytId
+            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
+            : (p.imagen || '');
 
-        // Si hay YouTube, embeber iframe; si hay imagen, mostrarla
-        if (p.videoYoutube) {
-            var ytId = _extraerYTId(p.videoYoutube);
-            if (ytId) {
-                card.innerHTML = '<div style="position:relative; padding-top:56.25%;"><iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>';
-            }
-        } else if (p.imagen) {
-            card.innerHTML = '<img src="' + p.imagen + '" style="width:100%; aspect-ratio:16/9; object-fit:cover;" onerror="this.parentElement.style.background=\'#d9cfc8\'; this.style.display=\'none\'">';
+        var card = document.createElement('div');
+        card.className = 'card-musica-play';
+        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;';
+        card.addEventListener('mouseenter', function() { this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.13)'; });
+        card.addEventListener('mouseleave', function() { this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; });
+
+        // Thumbnail con play overlay
+        var mediaWrap = document.createElement('div');
+        mediaWrap.style.cssText = 'position:relative; aspect-ratio:16/9; background:#111; overflow:hidden;';
+
+        if (thumbSrc) {
+            var thumb = document.createElement('img');
+            thumb.src = thumbSrc;
+            thumb.alt = p.nombre;
+            thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;';
+            thumb.onerror = function() { this.style.display='none'; };
+            card.addEventListener('mouseenter', function() { thumb.style.transform='scale(1.04)'; });
+            card.addEventListener('mouseleave', function() { thumb.style.transform=''; });
+            mediaWrap.appendChild(thumb);
         }
 
-        // Info: nombre + álbum (columna Categoría = col E = p.enlace que en el sheet es col F... 
-        // Pero en música, el album/disco viene en la columna 'seccion' que tiene el texto largo.
-        // Revisando el Sheet: "seccion" de música = "A Viajar se ha Dicho" etc.
+        // Ícono de play si es video, foto si es imagen
+        var playBtn = document.createElement('div');
+        if (ytId) {
+            playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.2s,background 0.2s;';
+            playBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
+            card.addEventListener('mouseenter', function() { playBtn.style.transform='translate(-50%,-50%) scale(1.12)'; playBtn.style.background='rgba(200,0,0,0.95)'; });
+            card.addEventListener('mouseleave', function() { playBtn.style.transform='translate(-50%,-50%)'; playBtn.style.background='rgba(255,0,0,0.88)'; });
+        }
+        mediaWrap.appendChild(playBtn);
+        card.appendChild(mediaWrap);
+
+        // Info
         var infoDiv = document.createElement('div');
         infoDiv.style.cssText = 'padding:12px 14px;';
         var h3 = document.createElement('h3');
-        h3.style.cssText = 'margin:0 0 4px; font-size:15px; color:#362a22; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+        h3.style.cssText = 'margin:0 0 4px;font-size:15px;color:#362a22;font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
         h3.textContent = p.nombre;
         infoDiv.appendChild(h3);
-
-        // Álbum/disco — en col G (seccion) viene el nombre del álbum
-        var album = p.seccion || '';
-        if (album) {
+        if (p.seccion) {
             var albumP = document.createElement('p');
-            albumP.style.cssText = 'margin:0; font-size:12px; color:#8c7565; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
-            albumP.innerHTML = '💿 ' + album;
+            albumP.style.cssText = 'margin:0 0 2px;font-size:12px;color:#8c7565;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+            albumP.innerHTML = '💿 ' + p.seccion;
             infoDiv.appendChild(albumP);
         }
-
         if (p.fecha) {
             var fechaP = document.createElement('p');
-            fechaP.style.cssText = 'margin:4px 0 0; font-size:11px; color:#aaa;';
+            fechaP.style.cssText = 'margin:2px 0 0;font-size:11px;color:#aaa;';
             fechaP.textContent = '📅 ' + p.fecha;
             infoDiv.appendChild(fechaP);
         }
-
         card.appendChild(infoDiv);
+
+        // Click: abre modal de video
+        card.addEventListener('click', function() { _abrirPlayerModal(p, ytId); });
         contenedorMusica.appendChild(card);
     });
 }
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN PROYECTOS (GRID DE 3 — iframes embebidos)
+// RENDERIZADO SECCIÓN PROYECTOS — thumbnail + play (un video a la vez)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarSeccionProyectos() {
     var panelProyectos = document.getElementById('panelPillProyectos');
@@ -377,14 +393,11 @@ function renderizarSeccionProyectos() {
         cont.id = 'contenedorProyectos';
         panelProyectos.appendChild(cont);
     }
-    cont.innerHTML = '';
+    if (cont.childElementCount > 0) return;
+
     cont.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar por columna 'categoria' normalizada = 'proyecto'
-    var items = listaProductos.filter(function(p) {
-        return p.categoriaNorm === 'proyecto';
-    });
-
+    var items = listaProductos.filter(function(p) { return p.categoriaNorm === 'proyecto'; });
     items.sort(function(a, b) {
         var dA = new Date(a.fecha), dB = new Date(b.fecha);
         if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
@@ -393,55 +406,185 @@ function renderizarSeccionProyectos() {
 
     if (items.length === 0) {
         cont.style.display = 'block';
-        cont.innerHTML = '<p style="text-align:center; color:#888; padding:40px 0;">Próximamente compartiremos nuevos proyectos.</p>';
+        cont.innerHTML = '<p style="text-align:center;color:#888;padding:40px 0;">Próximamente compartiremos nuevos proyectos.</p>';
         return;
     }
 
     items.forEach(function(p) {
+        var ytId = p.videoYoutube ? _extraerYTId(p.videoYoutube) : '';
+        var thumbSrc = ytId
+            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
+            : (p.imagen || '');
+
         var card = document.createElement('div');
         card.className = 'card-dinamica';
-        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);';
+        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;';
+        card.addEventListener('mouseenter', function() { this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.13)'; });
+        card.addEventListener('mouseleave', function() { this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; });
 
-        // Si hay YouTube, embeber iframe; si hay imagen, mostrarla
-        if (p.videoYoutube) {
-            var ytId = _extraerYTId(p.videoYoutube);
-            if (ytId) {
-                var mediaDiv = document.createElement('div');
-                mediaDiv.style.cssText = 'position:relative; padding-top:56.25%;';
-                mediaDiv.innerHTML = '<iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>';
-                card.appendChild(mediaDiv);
-            }
-        } else if (p.imagen) {
-            var imgEl = document.createElement('img');
-            imgEl.src = p.imagen; imgEl.alt = p.nombre;
-            imgEl.style.cssText = 'width:100%; aspect-ratio:16/9; object-fit:cover; display:block;';
-            imgEl.onerror = function() { this.style.display='none'; this.parentElement.style.background='#eee'; };
-            card.appendChild(imgEl);
+        var mediaWrap = document.createElement('div');
+        mediaWrap.style.cssText = 'position:relative; aspect-ratio:16/9; background:#111; overflow:hidden;';
+
+        if (thumbSrc) {
+            var thumb = document.createElement('img');
+            thumb.src = thumbSrc; thumb.alt = p.nombre;
+            thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;';
+            thumb.onerror = function() { this.style.display='none'; };
+            card.addEventListener('mouseenter', function() { thumb.style.transform='scale(1.04)'; });
+            card.addEventListener('mouseleave', function() { thumb.style.transform=''; });
+            mediaWrap.appendChild(thumb);
         }
+
+        if (ytId) {
+            var playBtn = document.createElement('div');
+            playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.2s,background 0.2s;';
+            playBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
+            card.addEventListener('mouseenter', function() { playBtn.style.transform='translate(-50%,-50%) scale(1.12)'; playBtn.style.background='rgba(200,0,0,0.95)'; });
+            card.addEventListener('mouseleave', function() { playBtn.style.transform='translate(-50%,-50%)'; playBtn.style.background='rgba(255,0,0,0.88)'; });
+            mediaWrap.appendChild(playBtn);
+        }
+        card.appendChild(mediaWrap);
 
         var infoDiv = document.createElement('div');
         infoDiv.style.cssText = 'padding:12px 14px;';
         var h3 = document.createElement('h3');
-        h3.style.cssText = 'font-size:15px; margin:5px 0; font-weight:700; color:#362a22;';
+        h3.style.cssText = 'font-size:15px;margin:0 0 4px;font-weight:700;color:#362a22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
         h3.textContent = p.nombre;
         infoDiv.appendChild(h3);
         if (p.fecha) {
             var fechaP = document.createElement('p');
-            fechaP.style.cssText = 'font-size:12px; color:#8c7565; margin:2px 0;';
+            fechaP.style.cssText = 'font-size:12px;color:#8c7565;margin:2px 0;';
             fechaP.textContent = '📅 ' + p.fecha;
             infoDiv.appendChild(fechaP);
         }
         if (p.descripcion) {
             var descP = document.createElement('p');
-            descP.style.cssText = 'font-size:13px; color:#705c4f; margin:4px 0 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;';
+            descP.style.cssText = 'font-size:13px;color:#705c4f;margin:4px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
             descP.textContent = p.descripcion;
             infoDiv.appendChild(descP);
         }
         card.appendChild(infoDiv);
+
+        card.addEventListener('click', function() { _abrirPlayerModal(p, ytId); });
         cont.appendChild(card);
     });
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PLAYER MODAL — un solo video a la vez (lazy, autoplay al abrir)
+// ══════════════════════════════════════════════════════════════════════════════
+(function() {
+    // Crear el overlay y caja del player una sola vez
+    var overlay = document.createElement('div');
+    overlay.id = 'playerModalElba';
+    overlay.style.cssText = [
+        'display:none;position:fixed;inset:0;z-index:9000;',
+        'background:rgba(0,0,0,0.88);backdrop-filter:blur(4px);',
+        'align-items:center;justify-content:center;padding:16px;box-sizing:border-box;'
+    ].join('');
+
+    var caja = document.createElement('div');
+    caja.style.cssText = 'position:relative;width:100%;max-width:820px;display:flex;flex-direction:column;gap:0;';
+
+    // Barra superior: título + cerrar
+    var barra = document.createElement('div');
+    barra.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 4px 8px;';
+    var titulo = document.createElement('p');
+    titulo.id = 'playerModalTitulo';
+    titulo.style.cssText = 'margin:0;font-size:14px;color:#fff;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;';
+    var btnCerrar = document.createElement('button');
+    btnCerrar.textContent = '✕';
+    btnCerrar.style.cssText = 'background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;';
+    btnCerrar.addEventListener('click', _cerrarPlayerModal);
+    barra.appendChild(titulo);
+    barra.appendChild(btnCerrar);
+
+    // Contenedor del iframe (16:9)
+    var videoWrap = document.createElement('div');
+    videoWrap.style.cssText = 'position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;';
+    var frameHolder = document.createElement('div');
+    frameHolder.id = 'playerModalFrame';
+    videoWrap.appendChild(frameHolder);
+
+    // Descripción (opcional)
+    var desc = document.createElement('p');
+    desc.id = 'playerModalDesc';
+    desc.style.cssText = 'margin:10px 4px 0;font-size:13px;color:#ccc;line-height:1.6;display:none;';
+
+    // Botón "Ver en YouTube"
+    var btnYT = document.createElement('a');
+    btnYT.id = 'playerModalBtnYT';
+    btnYT.target = '_blank';
+    btnYT.rel = 'noopener';
+    btnYT.style.cssText = 'display:none;margin:10px 4px 0;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:#FF0000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;';
+    btnYT.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> Ver en YouTube';
+
+    caja.appendChild(barra);
+    caja.appendChild(videoWrap);
+    caja.appendChild(desc);
+    caja.appendChild(btnYT);
+    overlay.appendChild(caja);
+
+    // Cerrar al click en el fondo
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) _cerrarPlayerModal(); });
+    // Cerrar con Escape
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') _cerrarPlayerModal(); });
+
+    function _cerrarPlayerModal() {
+        overlay.style.display = 'none';
+        document.getElementById('playerModalFrame').innerHTML = ''; // destruye el iframe → detiene audio/video
+        document.body.style.overflow = '';
+    }
+    window._cerrarPlayerModal = _cerrarPlayerModal;
+
+    // Inyectar al body cuando el DOM esté listo
+    function _inyectar() { document.body.appendChild(overlay); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _inyectar); }
+    else { _inyectar(); }
+})();
+
+function _abrirPlayerModal(p, ytId) {
+    var overlay = document.getElementById('playerModalElba');
+    if (!overlay) return;
+
+    // Título
+    document.getElementById('playerModalTitulo').textContent = p.nombre;
+
+    // Descripción
+    var descEl = document.getElementById('playerModalDesc');
+    if (p.descripcion) {
+        descEl.textContent = p.descripcion;
+        descEl.style.display = 'block';
+    } else {
+        descEl.style.display = 'none';
+    }
+
+    // Iframe con autoplay
+    var frameHolder = document.getElementById('playerModalFrame');
+    frameHolder.innerHTML = '';
+    if (ytId) {
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1';
+        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.allowFullscreen = true;
+        frameHolder.appendChild(iframe);
+
+        // Botón "Ver en YouTube"
+        var btnYT = document.getElementById('playerModalBtnYT');
+        btnYT.href = p.videoYoutube || ('https://www.youtube.com/watch?v=' + ytId);
+        btnYT.style.display = 'inline-flex';
+    } else if (p.imagen) {
+        // Es solo imagen — mostrarla ampliada
+        frameHolder.innerHTML = '<img src="' + p.imagen + '" style="width:100%;height:100%;object-fit:contain;" alt="' + p.nombre + '">';
+        document.getElementById('playerModalBtnYT').style.display = 'none';
+    }
+
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+window._abrirPlayerModal = _abrirPlayerModal;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CARGA DESDE GOOGLE SHEETS
@@ -625,6 +768,9 @@ function cerrarModalProducto() {
     const modalEl = document.getElementById('modalProducto');
     modalEl.classList.remove('abierto');
     document.body.style.overflow = 'auto';
+    // Limpiar galería para detener cualquier iframe de video activo
+    var track = document.getElementById('modalGaleriaTrack');
+    if (track) track.innerHTML = '';
 }
 
 function renderizarGaleria() {
