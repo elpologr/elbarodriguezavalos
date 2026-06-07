@@ -1,9 +1,9 @@
 // ============================================================
-// ELBA RODRÍGUEZ AVALÓS — app.js (ACTUALIZADO CON MÚSICA)
-// JavaScript principal - Versión Portafolio Artístico
+// ELBA RODRÍGUEZ AVALÓS — app.js
+// Versión con nueva estructura de columnas + submenú modal
+// Columnas: Nombre | imagen | enlace | Descripcion | fecha | categoria | boton | seccion
 // ============================================================
 
-// ── Helper: ejecuta fn cuando el DOM esté listo ──
 function _ready(fn) {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', fn);
@@ -12,22 +12,23 @@ function _ready(fn) {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // CONFIGURACIÓN GOOGLE SHEETS
-// ══════════════════════════════════════════════════════════════════════════════
-var SHEET_ID = '1syFSE4GiAfmvEslC038srzJyqJGMJ9AEpbUdnNgBtyE'; // Tu ID actual
+// ══════════════════════════════════════════════════════════════
+var SHEET_ID = '1syFSE4GiAfmvEslC038srzJyqJGMJ9AEpbUdnNgBtyE';
 var listaProductos = [];
 
-// COLUMNAS DEL SHEET (estructura real actual):
+// COLUMNAS DEL SHEET (nueva estructura):
 // A (0): Nombre
-// B (1): imagen/video  ← URL de imagen o YouTube
-// C (2): Descripcion
-// D (3): fecha
-// E (4): categoria     ← Para Biografía: 'youtube', 'facebook', 'instagram'. Para Música: álbum/disco
-// F (5): enlace        ← (reservado / vacío actualmente)
-// G (6): seccion       ← 'musica', 'aventura', 'proyecto', 'biografia'
+// B (1): imagen        ← URL de imgbb (solo imagen, sin video)
+// C (2): enlace        ← URL de YouTube, Facebook o Instagram
+// D (3): Descripcion
+// E (4): fecha
+// F (5): categoria     ← 'musica', 'aventura', 'proyecto', 'biografia' / 'youtube'/'facebook'/'instagram'
+// G (6): boton         ← texto del botón (ej: "Ver video", "Ver foto")
+// H (7): seccion       ← subsección / álbum / agrupación
 
-// ── Parser de CSV ──
+// ── Parser de CSV robusto ──
 function parsearCSV(texto) {
     var lineas = [];
     var filaActual = [];
@@ -37,8 +38,7 @@ function parsearCSV(texto) {
         var c = texto[i];
         if (c === '"') {
             if (dentroDeComillas && texto[i + 1] === '"') {
-                campoActual += '"';
-                i++;
+                campoActual += '"'; i++;
             } else {
                 dentroDeComillas = !dentroDeComillas;
             }
@@ -48,9 +48,7 @@ function parsearCSV(texto) {
         } else if ((c === '\n' || c === '\r') && !dentroDeComillas) {
             if (c === '\r' && texto[i + 1] === '\n') i++;
             filaActual.push(campoActual.trim());
-            if (filaActual.some(function(f) { return f !== ''; })) {
-                lineas.push(filaActual);
-            }
+            if (filaActual.some(function(f) { return f !== ''; })) lineas.push(filaActual);
             filaActual = [];
             campoActual = '';
         } else {
@@ -70,73 +68,48 @@ function _normalizar(str) {
         .trim();
 }
 
-// ── Convierte filas CSV en objetos ──
+// ── Convierte filas CSV → objetos con la nueva estructura ──
 function csvAProductos(filas) {
     if (filas.length < 2) return [];
     var productos = [];
     for (var i = 1; i < filas.length; i++) {
         var f = filas[i];
         var get = function(idx) { return (f[idx] || '').trim(); };
-        
-        if (!get(0)) continue; // Saltar filas vacías
+        if (!get(0)) continue;
 
-        // Col B puede contener una URL de YouTube, una imagen, o varias imágenes separadas por coma
-        var colB = get(1);
-        
-        // Separar posibles múltiples URLs en col B
-        var urlsColB = colB.split(',').map(function(u){ return u.trim(); }).filter(Boolean);
-        
-        // Detectar si alguna URL en col B es YouTube
-        var videoYT = '';
-        var imagenesColB = [];
-        urlsColB.forEach(function(u) {
-            if (u.includes('youtube.com') || u.includes('youtu.be')) {
-                if (!videoYT) videoYT = u; // primer video YouTube encontrado
-            } else if (u.startsWith('http') || u.startsWith('/')) {
-                imagenesColB.push(u);
-            }
-        });
+        var imagen  = get(1);  // imgbb URL
+        var enlace  = get(2);  // YouTube / Facebook / Instagram URL
+        var categoriaBruta = get(5);
+        var categoriaNorm  = _normalizar(categoriaBruta);
 
-        // Col F: puede tener URLs extra de imágenes (en algunas filas) o texto como 'youtube'
-        var colF = get(5);
-        var galeriaExtra = [];
-        if (colF && (colF.startsWith('http') || colF.startsWith('/'))) {
-            galeriaExtra = colF.split(',').map(function(u){ return u.trim(); }).filter(function(u){
-                return u.startsWith('http') || u.startsWith('/');
-            });
-        }
-        // enlace = col F como texto (para detectar 'youtube'/'facebook'/'instagram' en redes)
-        var enlaceTexto = (colF.startsWith('http') || colF.startsWith('/')) ? '' : colF;
+        // Detectar tipo de enlace
+        var enlaceNorm = _normalizar(enlace);
+        var esYoutube   = enlace && (enlace.includes('youtube.com') || enlace.includes('youtu.be'));
+        var esFacebook  = enlace && enlace.includes('facebook.com');
+        var esInstagram = enlace && enlace.includes('instagram.com');
 
-        var todasImagenes = imagenesColB.concat(galeriaExtra);
-        var imgPrincipal = todasImagenes[0] || '';
-
-        // Categoría normalizada (sin tildes) para comparaciones
-        var categoriaBruta = get(4);
-        var categoriaNorm = _normalizar(categoriaBruta);
+        // Para YouTube extraemos la thumbnail si no hay imagen imgbb
+        var ytId = esYoutube ? _extraerYTId(enlace) : '';
+        var imgFinal = imagen || (ytId ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg' : '');
 
         productos.push({
-            id:             i,
-            nombre:         get(0),
-            descripcion:    get(2),
-            fecha:          get(3),
-            categoria:      categoriaBruta,      // valor original del Sheet
-            categoriaNorm:  categoriaNorm,        // normalizado para filtros
-            enlace:         enlaceTexto,          // 'youtube'/'facebook'/'instagram' o vacío
-            seccion:        get(6),               // nombre del álbum / subsección
-            imagen:         imgPrincipal,
-            imagenes:       todasImagenes,
-            videoYoutube:   videoYT,
-            videoFacebook:  '',
-            videoInstagram: ''
+            id:            i,
+            nombre:        get(0),
+            imagen:        imgFinal,
+            enlace:        enlace,
+            descripcion:   get(3),
+            fecha:         get(4),
+            categoria:     categoriaBruta,
+            categoriaNorm: categoriaNorm,
+            boton:         get(6) || (esYoutube ? 'Ver video' : esInstagram ? 'Ver en Instagram' : esFacebook ? 'Ver en Facebook' : 'Ver'),
+            seccion:       get(7),
+            ytId:          ytId,
+            esYoutube:     esYoutube,
+            esFacebook:    esFacebook,
+            esInstagram:   esInstagram
         });
     }
-    console.log('[Elba] Productos cargados:', productos.length,
-        '| musica:', productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
-        '| biografia:', productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
-        '| aventura:', productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
-        '| youtube:', productos.filter(function(p){ return p.categoriaNorm === 'youtube'; }).length
-    );
+    console.log('[Elba] Productos cargados:', productos.length);
     return productos;
 }
 
@@ -144,265 +117,412 @@ function csvAProductos(filas) {
 function mostrarEstadoCarga(mensaje, esError) {
     var grid = document.getElementById('gridProductos');
     if (!grid) return;
-    grid.innerHTML = 
-        '<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:' +
+    grid.innerHTML =
+        '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:' +
         (esError ? '#c0392b' : '#8c7565') + ';">' +
-        '<div style="font-size:2rem; margin-bottom:12px;">' + (esError ? '⚠️' : '⏳') + '</div>' +
-        '<p style="font-size:1rem; font-weight:600;">' + mensaje + '</p>' +
-        (esError ? '<p style="font-size:0.85rem; color:#999; margin-top:8px;">Revisa la hoja de cálculo.</p>' : '') +
+        '<div style="font-size:2rem;margin-bottom:12px;">' + (esError ? '⚠️' : '⏳') + '</div>' +
+        '<p style="font-size:1rem;font-weight:600;">' + mensaje + '</p>' +
+        (esError ? '<p style="font-size:0.85rem;color:#999;margin-top:8px;">Revisa la hoja de cálculo.</p>' : '') +
         '</div>';
 }
 
-// ── Helper: extrae ID de YouTube de cualquier URL ──
+// ── Helper: extrae ID de YouTube ──
 function _extraerYTId(url) {
     if (!url) return '';
     var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
     return m ? m[1] : '';
 }
 
-// ── Helper: devuelve 'video' o 'imagen' según el contenido del item ──
-function _tipoMedio(p) {
-    return (p.videoYoutube) ? 'video' : 'imagen';
+
+// ══════════════════════════════════════════════════════════════
+// SUBMENÚ MODAL UNIFICADO
+// Se usa para todas las secciones: aventuras, música, proyectos, biografía
+// ══════════════════════════════════════════════════════════════
+(function() {
+    var overlay, caja, modalImg, modalVideoWrap, modalTitulo, modalFecha,
+        modalDesc, modalBtn, modalBtnContainer;
+
+    function _crearModal() {
+        overlay = document.createElement('div');
+        overlay.id = 'submenuModal';
+        overlay.style.cssText = [
+            'display:none;position:fixed;inset:0;z-index:9000;',
+            'background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);',
+            'align-items:flex-end;justify-content:center;',
+            'padding:0;box-sizing:border-box;'
+        ].join('');
+
+        caja = document.createElement('div');
+        caja.style.cssText = [
+            'position:relative;width:100%;max-width:600px;',
+            'background:#fff;border-radius:20px 20px 0 0;',
+            'overflow:hidden;max-height:90vh;overflow-y:auto;',
+            'box-shadow:0 -8px 40px rgba(0,0,0,0.3);',
+            'animation:slideUpModal 0.3s ease;'
+        ].join('');
+
+        // Barra de arrastre visual
+        var handle = document.createElement('div');
+        handle.style.cssText = 'width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0;';
+        caja.appendChild(handle);
+
+        // Botón cerrar
+        var btnX = document.createElement('button');
+        btnX.textContent = '✕';
+        btnX.style.cssText = 'position:absolute;top:12px;right:16px;background:rgba(0,0,0,0.08);border:none;color:#333;font-size:16px;width:32px;height:32px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;';
+        btnX.addEventListener('click', cerrarSubmenuModal);
+        caja.appendChild(btnX);
+
+        // Zona de media (imagen o placeholder de video)
+        var mediaZona = document.createElement('div');
+        mediaZona.style.cssText = 'position:relative;width:100%;aspect-ratio:16/9;background:#111;overflow:hidden;margin-top:8px;';
+
+        // Imagen
+        modalImg = document.createElement('img');
+        modalImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        modalImg.onerror = function() { this.style.display='none'; };
+        mediaZona.appendChild(modalImg);
+
+        // Overlay de play (para videos)
+        modalVideoWrap = document.createElement('div');
+        modalVideoWrap.id = 'submenuVideoWrap';
+        modalVideoWrap.style.cssText = 'display:none;position:absolute;inset:0;';
+        mediaZona.appendChild(modalVideoWrap);
+
+        // Botón de play centrado
+        var playOverlay = document.createElement('div');
+        playOverlay.id = 'submenuPlayBtn';
+        playOverlay.style.cssText = [
+            'display:none;position:absolute;top:50%;left:50%;',
+            'transform:translate(-50%,-50%);',
+            'width:64px;height:64px;background:rgba(255,0,0,0.9);',
+            'border-radius:50%;cursor:pointer;',
+            'display:none;align-items:center;justify-content:center;',
+            'box-shadow:0 4px 20px rgba(0,0,0,0.5);',
+            'transition:transform 0.2s,background 0.2s;'
+        ].join('');
+        playOverlay.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
+        playOverlay.addEventListener('mouseenter', function() {
+            this.style.transform='translate(-50%,-50%) scale(1.1)';
+            this.style.background='rgba(200,0,0,1)';
+        });
+        playOverlay.addEventListener('mouseleave', function() {
+            this.style.transform='translate(-50%,-50%)';
+            this.style.background='rgba(255,0,0,0.9)';
+        });
+        mediaZona.appendChild(playOverlay);
+
+        caja.appendChild(mediaZona);
+
+        // Info inferior
+        var infoZona = document.createElement('div');
+        infoZona.style.cssText = 'padding:20px 20px 28px;';
+
+        modalTitulo = document.createElement('h2');
+        modalTitulo.style.cssText = 'margin:0 0 6px;font-size:18px;font-weight:700;color:#362a22;line-height:1.3;padding-right:30px;';
+        infoZona.appendChild(modalTitulo);
+
+        modalFecha = document.createElement('p');
+        modalFecha.style.cssText = 'margin:0 0 12px;font-size:13px;color:#8c7565;';
+        infoZona.appendChild(modalFecha);
+
+        modalDesc = document.createElement('p');
+        modalDesc.style.cssText = 'margin:0 0 20px;font-size:14px;color:#5a4a40;line-height:1.65;';
+        infoZona.appendChild(modalDesc);
+
+        // Botón de acción
+        modalBtnContainer = document.createElement('div');
+        modalBtnContainer.style.cssText = 'display:none;';
+
+        modalBtn = document.createElement('a');
+        modalBtn.target = '_blank';
+        modalBtn.rel = 'noopener noreferrer';
+        modalBtn.style.cssText = [
+            'display:inline-flex;align-items:center;gap:8px;',
+            'background:#c0392b;color:#fff;padding:11px 22px;',
+            'border-radius:24px;font-size:14px;font-weight:700;',
+            'text-decoration:none;transition:background 0.2s;'
+        ].join('');
+        modalBtn.addEventListener('mouseenter', function() { this.style.background='#a93226'; });
+        modalBtn.addEventListener('mouseleave', function() { this.style.background='#c0392b'; });
+        modalBtnContainer.appendChild(modalBtn);
+        infoZona.appendChild(modalBtnContainer);
+
+        caja.appendChild(infoZona);
+        overlay.appendChild(caja);
+
+        // Cerrar al click en el fondo
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) cerrarSubmenuModal(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') cerrarSubmenuModal();
+        });
+
+        // Inyectar animación CSS
+        var style = document.createElement('style');
+        style.textContent = '@keyframes slideUpModal{from{transform:translateY(100%)}to{transform:translateY(0)}}';
+        document.head.appendChild(style);
+
+        _ready(function() { document.body.appendChild(overlay); });
+    }
+
+    // ── Abrir el submenú con datos de un producto ──
+    window.abrirSubmenuModal = function(p) {
+        if (!overlay) _crearModal();
+
+        var playBtn = document.getElementById('submenuPlayBtn');
+        var videoWrap = document.getElementById('submenuVideoWrap');
+
+        // Reset
+        videoWrap.innerHTML = '';
+        videoWrap.style.display = 'none';
+        modalImg.style.display = 'block';
+        if (playBtn) playBtn.style.display = 'none';
+
+        // Imagen
+        if (p.imagen) {
+            modalImg.src = p.imagen;
+            modalImg.style.display = 'block';
+        } else {
+            modalImg.style.display = 'none';
+        }
+
+        // Si tiene enlace de video → mostrar play overlay
+        if (p.enlace && (p.esYoutube || p.esFacebook || p.esInstagram)) {
+            if (playBtn) {
+                playBtn.style.display = 'flex';
+                playBtn.onclick = function() {
+                    _reproducirEnModal(p, videoWrap, playBtn);
+                };
+            }
+        }
+
+        // Texto
+        modalTitulo.textContent = p.nombre || '';
+        modalFecha.textContent  = p.fecha ? '📅 ' + p.fecha : '';
+        modalFecha.style.display = p.fecha ? '' : 'none';
+        modalDesc.textContent   = p.descripcion || '';
+        modalDesc.style.display = p.descripcion ? '' : 'none';
+
+        // Botón de acción
+        if (p.enlace) {
+            var textoBoton = p.boton || 'Ver';
+            var icono = p.esYoutube
+                ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>'
+                : p.esFacebook
+                    ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'
+                    : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+
+            modalBtn.href = p.enlace;
+            modalBtn.innerHTML = icono + ' ' + textoBoton;
+            modalBtnContainer.style.display = 'block';
+        } else {
+            modalBtnContainer.style.display = 'none';
+        }
+
+        // Mostrar
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    };
+
+    // ── Reproduce inline dentro del modal al presionar play ──
+    function _reproducirEnModal(p, videoWrap, playBtn) {
+        if (p.esYoutube && p.ytId) {
+            var iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/' + p.ytId + '?autoplay=1&rel=0&modestbranding=1';
+            iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            videoWrap.appendChild(iframe);
+            videoWrap.style.cssText = 'display:block;position:absolute;inset:0;background:#000;';
+            modalImg.style.display = 'none';
+            playBtn.style.display = 'none';
+        } else if (p.esFacebook || p.esInstagram) {
+            // Para FB/IG abrir en pestaña nueva (no se pueden embeber sin SDK)
+            window.open(p.enlace, '_blank', 'noopener,noreferrer');
+        }
+    }
+
+    window.cerrarSubmenuModal = function() {
+        if (!overlay) return;
+        var videoWrap = document.getElementById('submenuVideoWrap');
+        if (videoWrap) { videoWrap.innerHTML = ''; videoWrap.style.display = 'none'; }
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    // Pre-crear al cargar
+    _ready(_crearModal);
+})();
+
+
+// ══════════════════════════════════════════════════════════════
+// FUNCIÓN GENÉRICA PARA CREAR CARDS (usada en todas las secciones)
+// ══════════════════════════════════════════════════════════════
+function _crearCard(p) {
+    var card = document.createElement('div');
+    card.className = 'card-dinamica';
+    card.style.cssText = 'background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;display:flex;flex-direction:column;';
+
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-3px)';
+        this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.13)';
+    });
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = '';
+        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+    });
+
+    // Zona de media
+    var mediaWrap = document.createElement('div');
+    mediaWrap.style.cssText = 'position:relative;aspect-ratio:16/9;background:#1a1a1a;overflow:hidden;flex-shrink:0;';
+
+    // Imagen (de imgbb o thumbnail de YT)
+    if (p.imagen) {
+        var img = document.createElement('img');
+        img.src = p.imagen;
+        img.alt = p.nombre;
+        img.loading = 'lazy';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.35s;';
+        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#f0ece8'; };
+        card.addEventListener('mouseenter', function() { img.style.transform='scale(1.05)'; });
+        card.addEventListener('mouseleave', function() { img.style.transform=''; });
+        mediaWrap.appendChild(img);
+    }
+
+    // Botón de play si hay enlace de video
+    if (p.enlace && (p.esYoutube || p.esFacebook || p.esInstagram)) {
+        var playBtn = document.createElement('div');
+        var color = p.esYoutube ? 'rgba(255,0,0,0.9)' : p.esFacebook ? 'rgba(24,119,242,0.9)' : 'rgba(193,53,132,0.9)';
+        playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:' + color + ';border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.4);transition:transform 0.2s,background 0.2s;pointer-events:none;';
+        playBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
+        mediaWrap.appendChild(playBtn);
+    }
+
+    card.appendChild(mediaWrap);
+
+    // Info
+    var info = document.createElement('div');
+    info.style.cssText = 'padding:12px 14px;flex-grow:1;display:flex;flex-direction:column;gap:4px;';
+
+    var h3 = document.createElement('h3');
+    h3.style.cssText = 'margin:0;font-size:15px;font-weight:700;color:#362a22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;';
+    h3.textContent = p.nombre;
+    info.appendChild(h3);
+
+    if (p.seccion) {
+        var secP = document.createElement('p');
+        secP.style.cssText = 'margin:0;font-size:12px;color:#8c7565;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        secP.textContent = '💿 ' + p.seccion;
+        info.appendChild(secP);
+    }
+
+    if (p.fecha) {
+        var fechaP = document.createElement('p');
+        fechaP.style.cssText = 'margin:0;font-size:11px;color:#aaa;';
+        fechaP.textContent = '📅 ' + p.fecha;
+        info.appendChild(fechaP);
+    }
+
+    if (p.boton && p.enlace) {
+        var btnTexto = document.createElement('p');
+        btnTexto.style.cssText = 'margin:6px 0 0;font-size:12px;color:#c0392b;font-weight:700;';
+        btnTexto.textContent = p.boton + ' →';
+        info.appendChild(btnTexto);
+    }
+
+    card.appendChild(info);
+
+    // Click → submenú modal
+    card.addEventListener('click', function() {
+        window.abrirSubmenuModal(p);
+    });
+
+    return card;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO DEL CATÁLOGO (MIS AVENTURAS)
-// ══════════════════════════════════════════════════════════════════════════════
+function _sortPorFecha(items) {
+    return items.sort(function(a, b) {
+        var dA = new Date(a.fecha), dB = new Date(b.fecha);
+        if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
+        return dB - dA;
+    });
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// RENDERIZADO — MIS AVENTURAS
+// ══════════════════════════════════════════════════════════════
 function renderizarCatalogoCompleto() {
     var grid = document.getElementById('gridProductos');
     if (!grid) return;
     grid.innerHTML = '';
 
-    // Filtrar por columna 'categoria' normalizada = 'aventura'
-    var items = listaProductos.filter(function(p) {
+    var items = _sortPorFecha(listaProductos.filter(function(p) {
         return p.categoriaNorm === 'aventura';
-    });
-
-    // ORDENAR POR FECHA — más reciente primero
-    items.sort(function(a, b) {
-        var dateA = new Date(a.fecha);
-        var dateB = new Date(b.fecha);
-        if (isNaN(dateA.getTime())) return 1;
-        if (isNaN(dateB.getTime())) return -1;
-        return dateB - dateA;
-    });
+    }));
 
     if (items.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:#8c7565;"><div style="font-size:2rem; margin-bottom:12px;">🌟</div><p style="font-size:1rem; font-weight:600;">Próximamente compartiremos nuevas aventuras.</p></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#8c7565;"><div style="font-size:2rem;margin-bottom:12px;">🌟</div><p style="font-size:1rem;font-weight:600;">Próximamente compartiremos nuevas aventuras.</p></div>';
         return;
     }
 
     items.forEach(function(p) {
-        var card = document.createElement('div');
-        card.className = 'card-dinamica';
-        
-        // Data attributes
-        card.setAttribute('data-idx', String(p.id));
-        card.setAttribute('data-nombre', p.nombre);
-        card.setAttribute('data-imagenes', JSON.stringify(p.imagenes || []));
-        card.setAttribute('data-descripcion', p.descripcion || '');
-        card.setAttribute('data-categoria', p.categoria || '');
-        card.setAttribute('data-fecha', p.fecha || '');
-        card.setAttribute('data-video-youtube', p.videoYoutube || '');
-        card.setAttribute('data-video-facebook', p.videoFacebook || '');
-        card.setAttribute('data-video-instagram', p.videoInstagram || '');
-        
-        card.style.cursor = 'pointer';
-
-        // Imagen principal — si es video de YouTube, usamos su thumbnail
-        var imgContenedor = document.createElement('div');
-        imgContenedor.className = 'img-contenedor-dinamico';
-        var esVideo = _tipoMedio(p) === 'video';
-        var ytId = esVideo ? _extraerYTId(p.videoYoutube) : '';
-        var srcImagen = esVideo && ytId
-            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
-            : p.imagen;
-
-        var img = document.createElement('img');
-        img.src = srcImagen;
-        img.alt = p.nombre;
-        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#f0ece8'; };
-        imgContenedor.appendChild(img);
-
-        // Badge de tipo de medio (🎬 video / 📷 imagen)
-        var badge = document.createElement('span');
-        badge.className = 'badge-tipo-medio';
-        badge.textContent = esVideo ? '🎬' : '📷';
-        badge.title = esVideo ? 'Video de YouTube' : 'Galería de imágenes';
-        imgContenedor.appendChild(badge);
-        card.appendChild(imgContenedor);
-
-        // Botón favorito (corazón)
-        var btnLike = document.createElement('button');
-        btnLike.className = 'btn-like';
-        btnLike.setAttribute('aria-label', 'Me gusta ' + p.nombre);
-        btnLike.innerHTML = '🤍';
-        btnLike.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var idx = parseInt(card.getAttribute('data-idx'));
-            if (!isNaN(idx)) toggleLike(idx, btnLike);
-        });
-        imgContenedor.appendChild(btnLike);
-
-        // Información
-        var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'margin-top:10px; flex-grow:1; padding: 0 5px;';
-        var h3 = document.createElement('h3');
-        h3.style.cssText = 'font-size:16px; margin:5px 0; font-weight:700; color:#362a22;';
-        h3.textContent = p.nombre;
-        infoDiv.appendChild(h3);
-
-        // Fecha (si existe)
-        if (p.fecha) {
-            var fechaP = document.createElement('p');
-            fechaP.style.cssText = 'font-size:12px; color:#8c7565; margin:2px 0;';
-            fechaP.textContent = '📅 ' + p.fecha;
-            infoDiv.appendChild(fechaP);
-        }
-
-        // Descripción corta
-        if (p.descripcion) {
-            var descCorta = document.createElement('p');
-            descCorta.style.cssText = 'font-size:13px; color:#705c4f; margin:4px 0 0 0; line-height:1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;';
-            descCorta.textContent = p.descripcion;
-            infoDiv.appendChild(descCorta);
-        }
-
-        card.appendChild(infoDiv);
-
-        // Click para abrir modal
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('.btn-like')) return;
-            abrirModalProducto(card);
-        });
-
-        grid.appendChild(card);
+        grid.appendChild(_crearCard(p));
     });
-    
-    if (typeof syncBotonesLike === 'function') syncBotonesLike();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN MÚSICA — thumbnail + play (un video a la vez)
-// ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════
+// RENDERIZADO — MÚSICA
+// ══════════════════════════════════════════════════════════════
 function renderizarSeccionMusica() {
-    var panelMusica = document.getElementById('panelPillMusica');
-    if (!panelMusica) return;
+    var panel = document.getElementById('panelPillMusica');
+    if (!panel) return;
 
-    var contenedorMusica = document.getElementById('contenedorMusica');
-    if (!contenedorMusica) {
-        contenedorMusica = document.createElement('div');
-        contenedorMusica.id = 'contenedorMusica';
-        panelMusica.appendChild(contenedorMusica);
+    var cont = document.getElementById('contenedorMusica');
+    if (!cont) {
+        cont = document.createElement('div');
+        cont.id = 'contenedorMusica';
+        panel.appendChild(cont);
     }
-    // Si ya fue renderizado, no volver a hacerlo
-    if (contenedorMusica.childElementCount > 0) return;
+    if (cont.childElementCount > 0) return;
 
-    contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
+    cont.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px;';
 
-    var musicaItems = listaProductos.filter(function(p) { return p.categoriaNorm === 'musica'; });
-    musicaItems.sort(function(a, b) {
-        var dA = new Date(a.fecha), dB = new Date(b.fecha);
-        if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
-        return dB - dA;
-    });
+    var items = _sortPorFecha(listaProductos.filter(function(p) {
+        return p.categoriaNorm === 'musica';
+    }));
 
-    if (musicaItems.length === 0) {
-        contenedorMusica.style.display = 'block';
-        contenedorMusica.innerHTML = '<p style="text-align:center;width:100%;color:#888;padding:40px 0;">Próximamente agregaremos contenido musical.</p>';
+    if (items.length === 0) {
+        cont.style.display = 'block';
+        cont.innerHTML = '<p style="text-align:center;color:#888;padding:40px 0;">Próximamente agregaremos contenido musical.</p>';
         return;
     }
 
-    musicaItems.forEach(function(p) {
-        var ytId = p.videoYoutube ? _extraerYTId(p.videoYoutube) : '';
-        var thumbSrc = ytId
-            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
-            : (p.imagen || '');
-
-        var card = document.createElement('div');
-        card.className = 'card-musica-play';
-        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;';
-        card.addEventListener('mouseenter', function() { this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.13)'; });
-        card.addEventListener('mouseleave', function() { this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; });
-
-        // Thumbnail con play overlay
-        var mediaWrap = document.createElement('div');
-        mediaWrap.style.cssText = 'position:relative; aspect-ratio:16/9; background:#111; overflow:hidden;';
-
-        if (thumbSrc) {
-            var thumb = document.createElement('img');
-            thumb.src = thumbSrc;
-            thumb.alt = p.nombre;
-            thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;';
-            thumb.onerror = function() { this.style.display='none'; };
-            card.addEventListener('mouseenter', function() { thumb.style.transform='scale(1.04)'; });
-            card.addEventListener('mouseleave', function() { thumb.style.transform=''; });
-            mediaWrap.appendChild(thumb);
-        }
-
-        // Ícono de play si es video, foto si es imagen
-        var playBtn = document.createElement('div');
-        if (ytId) {
-            playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.2s,background 0.2s;';
-            playBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
-            card.addEventListener('mouseenter', function() { playBtn.style.transform='translate(-50%,-50%) scale(1.12)'; playBtn.style.background='rgba(200,0,0,0.95)'; });
-            card.addEventListener('mouseleave', function() { playBtn.style.transform='translate(-50%,-50%)'; playBtn.style.background='rgba(255,0,0,0.88)'; });
-        }
-        mediaWrap.appendChild(playBtn);
-        card.appendChild(mediaWrap);
-
-        // Info
-        var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'padding:12px 14px;';
-        var h3 = document.createElement('h3');
-        h3.style.cssText = 'margin:0 0 4px;font-size:15px;color:#362a22;font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
-        h3.textContent = p.nombre;
-        infoDiv.appendChild(h3);
-        if (p.seccion) {
-            var albumP = document.createElement('p');
-            albumP.style.cssText = 'margin:0 0 2px;font-size:12px;color:#8c7565;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-            albumP.innerHTML = '💿 ' + p.seccion;
-            infoDiv.appendChild(albumP);
-        }
-        if (p.fecha) {
-            var fechaP = document.createElement('p');
-            fechaP.style.cssText = 'margin:2px 0 0;font-size:11px;color:#aaa;';
-            fechaP.textContent = '📅 ' + p.fecha;
-            infoDiv.appendChild(fechaP);
-        }
-        card.appendChild(infoDiv);
-
-        // Click: abre modal de video
-        card.addEventListener('click', function() { _abrirPlayerModal(p, ytId); });
-        contenedorMusica.appendChild(card);
-    });
+    items.forEach(function(p) { cont.appendChild(_crearCard(p)); });
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN PROYECTOS — thumbnail + play (un video a la vez)
-// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// RENDERIZADO — PROYECTOS
+// ══════════════════════════════════════════════════════════════
 function renderizarSeccionProyectos() {
-    var panelProyectos = document.getElementById('panelPillProyectos');
-    if (!panelProyectos) return;
+    var panel = document.getElementById('panelPillProyectos');
+    if (!panel) return;
 
     var cont = document.getElementById('contenedorProyectos');
     if (!cont) {
         cont = document.createElement('div');
         cont.id = 'contenedorProyectos';
-        panelProyectos.appendChild(cont);
+        panel.appendChild(cont);
     }
     if (cont.childElementCount > 0) return;
 
-    cont.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
+    cont.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px;';
 
-    var items = listaProductos.filter(function(p) { return p.categoriaNorm === 'proyecto'; });
-    items.sort(function(a, b) {
-        var dA = new Date(a.fecha), dB = new Date(b.fecha);
-        if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
-        return dB - dA;
-    });
+    var items = _sortPorFecha(listaProductos.filter(function(p) {
+        return p.categoriaNorm === 'proyecto';
+    }));
 
     if (items.length === 0) {
         cont.style.display = 'block';
@@ -410,187 +530,154 @@ function renderizarSeccionProyectos() {
         return;
     }
 
-    items.forEach(function(p) {
-        var ytId = p.videoYoutube ? _extraerYTId(p.videoYoutube) : '';
-        var thumbSrc = ytId
-            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
-            : (p.imagen || '');
+    items.forEach(function(p) { cont.appendChild(_crearCard(p)); });
+}
 
-        var card = document.createElement('div');
-        card.className = 'card-dinamica';
-        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s,box-shadow 0.2s;';
-        card.addEventListener('mouseenter', function() { this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.13)'; });
-        card.addEventListener('mouseleave', function() { this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; });
 
-        var mediaWrap = document.createElement('div');
-        mediaWrap.style.cssText = 'position:relative; aspect-ratio:16/9; background:#111; overflow:hidden;';
+// ══════════════════════════════════════════════════════════════
+// RENDERIZADO — BIOGRAFÍA (redes sociales)
+// ══════════════════════════════════════════════════════════════
+var _NOMBRES_REDES = { youtube: 'YouTube', facebook: 'Facebook', instagram: 'Instagram' };
 
-        if (thumbSrc) {
-            var thumb = document.createElement('img');
-            thumb.src = thumbSrc; thumb.alt = p.nombre;
-            thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;';
-            thumb.onerror = function() { this.style.display='none'; };
-            card.addEventListener('mouseenter', function() { thumb.style.transform='scale(1.04)'; });
-            card.addEventListener('mouseleave', function() { thumb.style.transform=''; });
-            mediaWrap.appendChild(thumb);
+function initBotonesRedesBiografia() {
+    var btns = {
+        youtube:   document.getElementById('btnRedBioYT'),
+        facebook:  document.getElementById('btnRedBioFB'),
+        instagram: document.getElementById('btnRedBioIG')
+    };
+    var contenedor = document.getElementById('contenedorVideosRedes');
+    if (!contenedor) return;
+
+    Object.keys(btns).forEach(function(red) {
+        if (btns[red]) {
+            btns[red].addEventListener('click', function() {
+                Object.values(btns).forEach(function(b) { if (b) b.classList.remove('activo'); });
+                btns[red].classList.add('activo');
+                mostrarVideosDeRed(red, contenedor);
+            });
         }
-
-        if (ytId) {
-            var playBtn = document.createElement('div');
-            playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);transition:transform 0.2s,background 0.2s;';
-            playBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
-            card.addEventListener('mouseenter', function() { playBtn.style.transform='translate(-50%,-50%) scale(1.12)'; playBtn.style.background='rgba(200,0,0,0.95)'; });
-            card.addEventListener('mouseleave', function() { playBtn.style.transform='translate(-50%,-50%)'; playBtn.style.background='rgba(255,0,0,0.88)'; });
-            mediaWrap.appendChild(playBtn);
-        }
-        card.appendChild(mediaWrap);
-
-        var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'padding:12px 14px;';
-        var h3 = document.createElement('h3');
-        h3.style.cssText = 'font-size:15px;margin:0 0 4px;font-weight:700;color:#362a22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
-        h3.textContent = p.nombre;
-        infoDiv.appendChild(h3);
-        if (p.fecha) {
-            var fechaP = document.createElement('p');
-            fechaP.style.cssText = 'font-size:12px;color:#8c7565;margin:2px 0;';
-            fechaP.textContent = '📅 ' + p.fecha;
-            infoDiv.appendChild(fechaP);
-        }
-        if (p.descripcion) {
-            var descP = document.createElement('p');
-            descP.style.cssText = 'font-size:13px;color:#705c4f;margin:4px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
-            descP.textContent = p.descripcion;
-            infoDiv.appendChild(descP);
-        }
-        card.appendChild(infoDiv);
-
-        card.addEventListener('click', function() { _abrirPlayerModal(p, ytId); });
-        cont.appendChild(card);
     });
+
+    if (btns.youtube) btns.youtube.classList.add('activo');
+    mostrarVideosDeRed('youtube', contenedor);
+}
+
+function mostrarVideosDeRed(red, contenedor) {
+    contenedor.innerHTML = '<p style="text-align:center;padding:20px;">Cargando publicaciones...</p>';
+    contenedor.style.display = 'block';
+
+    var textoInfo = document.getElementById('textoRedActiva');
+    if (textoInfo) {
+        textoInfo.textContent = 'Estás viendo las publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' de Elba Rodríguez';
+    }
+
+    var redNorm = _normalizar(red);
+    var videos = listaProductos.filter(function(p) {
+        // Caso 1: categoria='biografia' y el enlace es de esa red
+        if (p.categoriaNorm === 'biografia') {
+            if (red === 'youtube'   && p.esYoutube)   return true;
+            if (red === 'facebook'  && p.esFacebook)  return true;
+            if (red === 'instagram' && p.esInstagram) return true;
+        }
+        // Caso 2: categoria = nombre de la red directamente
+        if (p.categoriaNorm === redNorm) return true;
+        return false;
+    });
+
+    if (videos.length === 0) {
+        contenedor.innerHTML = '<p style="text-align:center;padding:30px 20px;color:#888;font-size:0.95rem;">No hay publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' registradas aún.</p>';
+        return;
+    }
+
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px 0;';
+    videos.forEach(function(v) { grid.appendChild(_crearCard(v)); });
+
+    contenedor.innerHTML = '';
+    contenedor.appendChild(grid);
+}
+
+document.addEventListener('catalogoCargado', initBotonesRedesBiografia);
+
+
+// ══════════════════════════════════════════════════════════════
+// FAVORITOS
+// ══════════════════════════════════════════════════════════════
+var favoritos = (JSON.parse(localStorage.getItem('elba-favoritos') || '[]')).map(Number);
+function _guardarFavoritos() { localStorage.setItem('elba-favoritos', JSON.stringify(favoritos)); }
+function toggleLike(productoIdx, btn) {
+    var idx = parseInt(productoIdx);
+    if (isNaN(idx)) return;
+    var pos = favoritos.indexOf(idx);
+    var esFav = pos === -1;
+    if (esFav) favoritos.push(idx); else favoritos.splice(pos, 1);
+    _guardarFavoritos();
+    if (btn) { btn.textContent = esFav ? '❤️' : '🤍'; btn.classList.toggle('liked', esFav); }
 }
 
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PLAYER MODAL — un solo video a la vez (lazy, autoplay al abrir)
-// ══════════════════════════════════════════════════════════════════════════════
-(function() {
-    // Crear el overlay y caja del player una sola vez
-    var overlay = document.createElement('div');
-    overlay.id = 'playerModalElba';
-    overlay.style.cssText = [
-        'display:none;position:fixed;inset:0;z-index:9000;',
-        'background:rgba(0,0,0,0.88);backdrop-filter:blur(4px);',
-        'align-items:center;justify-content:center;padding:16px;box-sizing:border-box;'
-    ].join('');
-
-    var caja = document.createElement('div');
-    caja.style.cssText = 'position:relative;width:100%;max-width:820px;display:flex;flex-direction:column;gap:0;';
-
-    // Barra superior: título + cerrar
-    var barra = document.createElement('div');
-    barra.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 4px 8px;';
-    var titulo = document.createElement('p');
-    titulo.id = 'playerModalTitulo';
-    titulo.style.cssText = 'margin:0;font-size:14px;color:#fff;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px;';
-    var btnCerrar = document.createElement('button');
-    btnCerrar.textContent = '✕';
-    btnCerrar.style.cssText = 'background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;';
-    btnCerrar.addEventListener('click', _cerrarPlayerModal);
-    barra.appendChild(titulo);
-    barra.appendChild(btnCerrar);
-
-    // Contenedor del iframe (16:9)
-    var videoWrap = document.createElement('div');
-    videoWrap.style.cssText = 'position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;';
-    var frameHolder = document.createElement('div');
-    frameHolder.id = 'playerModalFrame';
-    videoWrap.appendChild(frameHolder);
-
-    // Descripción (opcional)
-    var desc = document.createElement('p');
-    desc.id = 'playerModalDesc';
-    desc.style.cssText = 'margin:10px 4px 0;font-size:13px;color:#ccc;line-height:1.6;display:none;';
-
-    // Botón "Ver en YouTube"
-    var btnYT = document.createElement('a');
-    btnYT.id = 'playerModalBtnYT';
-    btnYT.target = '_blank';
-    btnYT.rel = 'noopener';
-    btnYT.style.cssText = 'display:none;margin:10px 4px 0;align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:#FF0000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;';
-    btnYT.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> Ver en YouTube';
-
-    caja.appendChild(barra);
-    caja.appendChild(videoWrap);
-    caja.appendChild(desc);
-    caja.appendChild(btnYT);
-    overlay.appendChild(caja);
-
-    // Cerrar al click en el fondo
-    overlay.addEventListener('click', function(e) { if (e.target === overlay) _cerrarPlayerModal(); });
-    // Cerrar con Escape
-    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') _cerrarPlayerModal(); });
-
-    function _cerrarPlayerModal() {
-        overlay.style.display = 'none';
-        document.getElementById('playerModalFrame').innerHTML = ''; // destruye el iframe → detiene audio/video
-        document.body.style.overflow = '';
-    }
-    window._cerrarPlayerModal = _cerrarPlayerModal;
-
-    // Inyectar al body cuando el DOM esté listo
-    function _inyectar() { document.body.appendChild(overlay); }
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _inyectar); }
-    else { _inyectar(); }
-})();
-
-function _abrirPlayerModal(p, ytId) {
-    var overlay = document.getElementById('playerModalElba');
-    if (!overlay) return;
-
-    // Título
-    document.getElementById('playerModalTitulo').textContent = p.nombre;
-
-    // Descripción
-    var descEl = document.getElementById('playerModalDesc');
-    if (p.descripcion) {
-        descEl.textContent = p.descripcion;
-        descEl.style.display = 'block';
-    } else {
-        descEl.style.display = 'none';
-    }
-
-    // Iframe con autoplay
-    var frameHolder = document.getElementById('playerModalFrame');
-    frameHolder.innerHTML = '';
-    if (ytId) {
-        var iframe = document.createElement('iframe');
-        iframe.src = 'https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0&modestbranding=1';
-        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-        iframe.allowFullscreen = true;
-        frameHolder.appendChild(iframe);
-
-        // Botón "Ver en YouTube"
-        var btnYT = document.getElementById('playerModalBtnYT');
-        btnYT.href = p.videoYoutube || ('https://www.youtube.com/watch?v=' + ytId);
-        btnYT.style.display = 'inline-flex';
-    } else if (p.imagen) {
-        // Es solo imagen — mostrarla ampliada
-        frameHolder.innerHTML = '<img src="' + p.imagen + '" style="width:100%;height:100%;object-fit:contain;" alt="' + p.nombre + '">';
-        document.getElementById('playerModalBtnYT').style.display = 'none';
-    }
-
-    overlay.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+// ══════════════════════════════════════════════════════════════
+// MODO OSCURO
+// ══════════════════════════════════════════════════════════════
+function toggleModoOscuro() {
+    document.body.classList.toggle('modo-oscuro');
+    localStorage.setItem('elba-modo-oscuro', document.body.classList.contains('modo-oscuro') ? '1' : '0');
 }
-window._abrirPlayerModal = _abrirPlayerModal;
+if (localStorage.getItem('elba-modo-oscuro') !== '0') {
+    document.body.classList.add('modo-oscuro');
+}
 
-// ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════
+// PILL NAV
+// ══════════════════════════════════════════════════════════════
+var _pillBtns   = { biografia:'pillBiografia', musica:'pillMusica', proyectos:'pillProyectos', aventuras:'pillAventuras' };
+var _pillPanels = { biografia:'panelPillBiografia', musica:'panelPillMusica', proyectos:'panelPillProyectos', aventuras:'panelPillAventuras' };
+
+function activarPill(cual) {
+    Object.values(_pillBtns).forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.classList.remove('activo');
+    });
+    Object.values(_pillPanels).forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.classList.remove('activo');
+    });
+
+    var btnEl = document.getElementById(_pillBtns[cual]);
+    if (btnEl) btnEl.classList.add('activo');
+    var panelEl = document.getElementById(_pillPanels[cual]);
+    if (panelEl) panelEl.classList.add('activo');
+
+    var catalogo = document.getElementById('zona-catalogo');
+    if (catalogo) catalogo.style.display = (cual === 'aventuras') ? 'block' : 'none';
+
+    if (cual === 'musica') renderizarSeccionMusica();
+    if (cual === 'proyectos' && listaProductos.length > 0) renderizarSeccionProyectos();
+    if (cual === 'biografia' && listaProductos.length > 0) {
+        var cont = document.getElementById('contenedorVideosRedes');
+        var ytBtn = document.getElementById('btnRedBioYT');
+        if (cont && ytBtn && !ytBtn.classList.contains('activo')) {
+            ['btnRedBioYT','btnRedBioFB','btnRedBioIG'].forEach(function(id) {
+                var b = document.getElementById(id); if (b) b.classList.remove('activo');
+            });
+            ytBtn.classList.add('activo');
+            mostrarVideosDeRed('youtube', cont);
+        }
+    }
+}
+
+_ready(function() {
+    ['biografia','musica','proyectos','aventuras'].forEach(function(key) {
+        var btn = document.getElementById(_pillBtns[key]);
+        if (btn) btn.addEventListener('click', function() { activarPill(key); });
+    });
+    activarPill('biografia');
+});
+
+
+// ══════════════════════════════════════════════════════════════
 // CARGA DESDE GOOGLE SHEETS
-// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 function cargarDesdeGoogleSheets() {
-    // URL 1: export directo. URL 2: gviz (fallback si la hoja no está publicada para export)
     var csvUrl = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv';
     mostrarEstadoCarga('Cargando contenido...', false);
 
@@ -600,33 +687,27 @@ function cargarDesdeGoogleSheets() {
             return res.text();
         })
         .then(function(texto) {
-            // Detectar si Google devolvió HTML en lugar de CSV (hoja no publicada)
             if (texto.trim().startsWith('<!DOCTYPE') || texto.trim().startsWith('<html')) {
-                throw new Error('La hoja no está publicada. Ve a Archivo → Compartir → Publicar en la web → CSV y vuelve a intentar.');
+                throw new Error('La hoja no está publicada. Ve a Archivo → Compartir → Publicar en la web → CSV.');
             }
-
             var filas = parsearCSV(texto);
-            console.log('[Elba] Filas CSV leídas:', filas.length);
+            console.log('[Elba] Filas CSV:', filas.length);
             if (filas.length > 1) {
                 console.log('[Elba] Encabezados:', filas[0]);
                 console.log('[Elba] Primera fila de datos:', filas[1]);
             }
 
             var productos = csvAProductos(filas);
-
             if (productos.length === 0) {
                 mostrarEstadoCarga('La hoja está vacía o sin datos válidos.', true);
                 return;
             }
-
             listaProductos = productos;
-
-            // Diagnóstico solo en consola (abre DevTools → Console para ver)
-            console.log('[Elba] ✅ Hoja conectada | Total:', productos.length,
-                '| musica:', productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
-                '| biografia:', productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
-                '| aventura:', productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
-                '| proyecto:', productos.filter(function(p){ return p.categoriaNorm === 'proyecto'; }).length
+            console.log('[Elba] ✅ Total:', productos.length,
+                '| musica:', productos.filter(function(p){ return p.categoriaNorm==='musica'; }).length,
+                '| biografia:', productos.filter(function(p){ return p.categoriaNorm==='biografia'; }).length,
+                '| aventura:', productos.filter(function(p){ return p.categoriaNorm==='aventura'; }).length,
+                '| proyecto:', productos.filter(function(p){ return p.categoriaNorm==='proyecto'; }).length
             );
 
             var intro = document.getElementById('mis-aventuras-intro');
@@ -641,434 +722,52 @@ function cargarDesdeGoogleSheets() {
         });
 }
 
-
-// Iniciar carga
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', cargarDesdeGoogleSheets);
 } else {
     cargarDesdeGoogleSheets();
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MODAL DE PRODUCTO / EVENTO
-// ══════════════════════════════════════════════════════════════════════════════
-let galeriaImagenes = [];
-let galeriaIndice = 0;
+// ══════════════════════════════════════════════════════════════
+// MODAL DE PRODUCTO LEGACY (por compatibilidad con index.html)
+// Las funciones antiguas redirigen al nuevo submenú modal
+// ══════════════════════════════════════════════════════════════
+function abrirModalProducto(card) {
+    // Construir objeto producto desde atributos data-* de la card
+    var nombre    = card.getAttribute('data-nombre') || '';
+    var descripcion = card.getAttribute('data-descripcion') || '';
+    var fecha     = card.getAttribute('data-fecha') || '';
+    var videoYT   = card.getAttribute('data-video-youtube') || '';
+    var imgSrc    = '';
+    var imgEl = card.querySelector('img');
+    if (imgEl) imgSrc = imgEl.getAttribute('src') || '';
 
-function abrirModalProducto(card) { 
-    const nombre = card.getAttribute('data-nombre') || 'Evento';
-    const descripcion = card.getAttribute('data-descripcion') || '';
-    const imagenesJSON = card.getAttribute('data-imagenes');
-    
-    // Videos de redes sociales específicos de este evento
-    const videoYT  = card.getAttribute('data-video-youtube') || '';
-    const videoFB  = card.getAttribute('data-video-facebook') || '';
-    const videoIG  = card.getAttribute('data-video-instagram') || '';
+    var ytId = _extraerYTId(videoYT);
 
-    try {
-        galeriaImagenes = imagenesJSON ? JSON.parse(imagenesJSON) : [];
-    } catch(e) { galeriaImagenes = []; }
-
-    // Si no hay galería explícita, usar la imagen principal
-    if (galeriaImagenes.length === 0) {
-        const imgPrincipal = card.querySelector('.img-contenedor-dinamico img');
-        if (imgPrincipal) galeriaImagenes = [imgPrincipal.getAttribute('src')];
-    }
-
-    galeriaIndice = 0;
-    document.getElementById('modalProdTitulo').textContent = nombre;
-
-    // Descripción
-    const descTexto = document.getElementById('modalDescripcionTexto');
-    const descZona  = document.getElementById('modalDescripcionZona');
-    if (descripcion) {
-        descTexto.textContent = descripcion;
-        descZona.style.display = '';
-    } else {
-        descZona.style.display = 'none';
-    }
-
-    // Galería de imágenes adicionales (de la columna 'enlace')
-    const aditivosScroll = document.getElementById('modalAditivosScroll');
-    const aditivosZona   = document.getElementById('modalAditivosZona');
-    aditivosScroll.innerHTML = '';
-
-    // Filtramos la primera imagen porque esa ya es la principal
-    var extras = galeriaImagenes.slice(1); 
-    
-    if (extras.length > 0) {
-        aditivosZona.style.display = '';
-        const tituloZona = aditivosZona.querySelector('.modal-aditivos-titulo');
-        if (tituloZona) tituloZona.textContent = '📸 Galería';
-
-        extras.forEach(function(url, idx) {
-            var thumb = document.createElement('div');
-            thumb.style.cssText = 'width:80px; height:80px; border-radius:8px; overflow:hidden; cursor:pointer; flex-shrink:0; background:#111; position:relative;';
-            thumb.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
-            thumb.addEventListener('click', function() {
-                abrirZoomGaleria(idx + 1); 
-            });
-            aditivosScroll.appendChild(thumb);
-        });
-    } else {
-        aditivosZona.style.display = 'none';
-    }
-
-    // Botones de Redes Sociales EN EL MODAL
-    _actualizarBotonesRedModal(videoYT, videoFB, videoIG);
-
-    // Abrir modal
-    _actualizarGaleriaModal();
-    document.getElementById('modalProducto').classList.add('abierto');
-    document.body.style.overflow = 'hidden';
-}
-
-function _actualizarBotonesRedModal(yt, fb, ig) {
-    var ids = { youtube: 'btnRedYT', facebook: 'btnRedFB', instagram: 'btnRedIG' };
-    var links = { youtube: yt, facebook: fb, instagram: ig };
-    
-    Object.keys(ids).forEach(function(red) {
-        var btn = document.getElementById(ids[red]);
-        if (!btn) return;
-        var link = links[red];
-        
-        if (link) {
-            btn.style.display = '';
-            btn.onclick = function(e) { e.stopPropagation(); _abrirVideoModal(link); };
-        } else {
-            btn.style.display = 'none';
-        }
+    window.abrirSubmenuModal({
+        nombre: nombre,
+        imagen: imgSrc,
+        enlace: videoYT || '',
+        descripcion: descripcion,
+        fecha: fecha,
+        boton: videoYT ? 'Ver en YouTube' : '',
+        ytId: ytId,
+        esYoutube: !!videoYT,
+        esFacebook: false,
+        esInstagram: false,
+        seccion: ''
     });
 }
 
-function _abrirVideoModal(url) {
-    if (!url) return;
-    var ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
-    if (ytMatch) {
-        var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;cursor:pointer;';
-        overlay.innerHTML =
-            '<div style="position:relative;width:100%;max-width:820px;aspect-ratio:16/9;cursor:default;" onclick="event.stopPropagation()">' +
-            '<iframe src="https://www.youtube.com/embed/' + ytMatch[1] + '?autoplay=1&rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:12px;" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen></iframe>' +
-            '<button onclick="this.closest(\'div\').parentElement.remove()" style="position:absolute;top:-38px;right:0;background:none;border:none;color:white;font-size:30px;cursor:pointer;line-height:1;padding:0;">✕</button>' +
-            '</div>';
-        overlay.addEventListener('click', function() { overlay.remove(); });
-        document.body.appendChild(overlay);
-    } else {
-        window.open(url, '_blank');
-    }
-}
-window._abrirVideoModal = _abrirVideoModal;
+function cerrarModalProducto() { window.cerrarSubmenuModal(); }
 
-function _actualizarGaleriaModal() {
-    renderizarGaleria();
-}
-
-function cerrarModalProducto() {
-    const modalEl = document.getElementById('modalProducto');
-    modalEl.classList.remove('abierto');
-    document.body.style.overflow = 'auto';
-    // Limpiar galería para detener cualquier iframe de video activo
-    var track = document.getElementById('modalGaleriaTrack');
-    if (track) track.innerHTML = '';
-}
-
-function renderizarGaleria() {
-    const track = document.getElementById('modalGaleriaTrack');
-    const dotsContainer = document.getElementById('modalDots');
-    if(!track || !dotsContainer) return;
-    
-    track.innerHTML = '';
-    dotsContainer.innerHTML = '';
-
-    galeriaImagenes.forEach((src, i) => {
-        const slide = document.createElement('div');
-        slide.className = 'modal-galeria-slide';
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = 'Imagen ' + (i + 1);
-        img.style.cursor = 'zoom-in';
-        img.onclick = () => abrirZoomGaleria(i);
-        slide.appendChild(img);
-        track.appendChild(slide);
-
-        const dot = document.createElement('div');
-        dot.className = 'modal-dot' + (i === 0 ? ' activo' : '');
-        dot.onclick = () => irASlide(i);
-        dotsContainer.appendChild(dot);
-    });
-
-    dotsContainer.style.display = galeriaImagenes.length <= 1 ? 'none' : 'flex';
-    actualizarNavegacion();
-}
-
-function irASlide(indice) {
-    const track = document.getElementById('modalGaleriaTrack');
-    galeriaIndice = Math.max(0, Math.min(indice, galeriaImagenes.length - 1));
-    track.scrollTo({ left: galeriaIndice * track.offsetWidth, behavior: 'smooth' });
-    actualizarNavegacion();
-}
-
-function actualizarNavegacion() {
-    const total = galeriaImagenes.length;
-    document.getElementById('btnGalPrev').classList.toggle('oculto-nav', galeriaIndice === 0);
-    document.getElementById('btnGalNext').classList.toggle('oculto-nav', galeriaIndice >= total - 1);
-    document.getElementById('modalContador').textContent = total > 1 ? `${galeriaIndice + 1} / ${total}` : '';
-    document.querySelectorAll('.modal-dot').forEach((dot, i) => {
-        dot.classList.toggle('activo', i === galeriaIndice);
-    });
-}
-
-// Zoom Lightbox
-let zoomIndice = 0;
-function abrirZoomGaleria(indice) {
-    zoomIndice = (indice !== undefined) ? indice : galeriaIndice;
-    actualizarZoom();
-    document.getElementById('zoomOverlay').classList.add('abierto');
-    document.body.style.overflow = 'hidden';
-}
-function cerrarZoomGaleria() {
-    document.getElementById('zoomOverlay').classList.remove('abierto');
-    document.body.style.overflow = 'auto'; 
-}
-function zoomNavegar(dir) {
-    zoomIndice = Math.max(0, Math.min(zoomIndice + dir, galeriaImagenes.length - 1));
-    actualizarZoom();
-}
-function actualizarZoom() {
-    const total = galeriaImagenes.length;
-    const img = document.getElementById('zoomImg');
-    if(!img) return;
-    img.style.opacity = '0.4';
-    img.src = galeriaImagenes[zoomIndice] || '';
-    img.onload = () => { img.style.opacity = '1'; };
-    document.getElementById('zoomContador').textContent = total > 1 ? `${zoomIndice + 1} / ${total}` : '';
-    document.getElementById('zoomPrev').classList.toggle('oculto-zoom', zoomIndice === 0);
-    document.getElementById('zoomNext').classList.toggle('oculto-zoom', zoomIndice >= total - 1);
-}
-
-document.addEventListener('keydown', function(e) {
-    const overlay = document.getElementById('zoomOverlay');
-    if (!overlay || !overlay.classList.contains('abierto')) return;
-    if (e.key === 'Escape') cerrarZoomGaleria();
-    if (e.key === 'ArrowLeft') zoomNavegar(-1);
-    if (e.key === 'ArrowRight') zoomNavegar(1);
-});
-
-document.getElementById('modalProducto').addEventListener('click', function(e) {
-    if (e.target === this) cerrarModalProducto();
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// BOTONES DE REDES SOCIALES EN BIOGRAFÍA
-// ══════════════════════════════════════════════════════════════════════════════
-var _NOMBRES_REDES = { youtube: 'YouTube', facebook: 'Facebook', instagram: 'Instagram' };
-
-function initBotonesRedesBiografia() {
-    var btns = {
-        youtube:   document.getElementById('btnRedBioYT'), 
-        facebook:  document.getElementById('btnRedBioFB'),
-        instagram: document.getElementById('btnRedBioIG')
-    };
-    
-    var contenedor = document.getElementById('contenedorVideosRedes');
-    if (!contenedor) return;
-
-    Object.keys(btns).forEach(function(red) {
-        if (btns[red]) {
-            btns[red].addEventListener('click', function() {
-                Object.values(btns).forEach(function(b) { if (b) b.classList.remove('activo'); });
-                btns[red].classList.add('activo');
-                mostrarVideosDeRed(red, contenedor);
-            });
-        }
-    });
-
-    // YouTube seleccionado y desplegado por defecto
-    if (btns.youtube) btns.youtube.classList.add('activo');
-    mostrarVideosDeRed('youtube', contenedor);
-}
-
-function mostrarVideosDeRed(red, contenedor) {
-    contenedor.innerHTML = '<p style="text-align:center; padding:20px;">Cargando publicaciones...</p>';
-    contenedor.style.display = 'block';
-
-    // Texto dinámico
-    var textoInfo = document.getElementById('textoRedActiva');
-    if (textoInfo) {
-        textoInfo.textContent = 'Estás viendo las publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' de Elba Rodríguez';
-    }
-
-    // Filtrar: categoria normalizada = 'biografia' Y enlace = 'youtube'/'facebook'/'instagram'
-    // O bien: categoria normalizada = 'youtube'/'facebook'/'instagram' directamente
-    var redNorm = _normalizar(red);
-    var videos = listaProductos.filter(function(p) {
-        // Caso 1: categoria='biografia' y enlace='youtube' (estructura actual del Sheet)
-        if (p.categoriaNorm === 'biografia' && _normalizar(p.enlace) === redNorm) return true;
-        // Caso 2: categoria='youtube'/'facebook'/'instagram' directamente
-        if (p.categoriaNorm === redNorm) return true;
-        return false;
-    });
-
-    if (videos.length === 0) {
-        contenedor.innerHTML = '<p style="text-align:center; padding:30px 20px; color:#888; font-size:0.95rem;">No hay publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' registradas aún.</p>';
-        return;
-    }
-
-    var grid = document.createElement('div');
-    grid.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; padding:16px 0;';
-    
-    videos.forEach(function(v) {
-        var card = document.createElement('div');
-        card.style.cssText = 'background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);';
-
-        // Col B contiene la URL de YouTube para las entradas de biografía
-        var ytId = _extraerYTId(v.videoYoutube || v.imagen || '');
-
-        if (red === 'youtube' && ytId) {
-            // Iframe embebido directo
-            var iframeWrap = document.createElement('div');
-            iframeWrap.style.cssText = 'position:relative; padding-top:56.25%;';
-            iframeWrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>';
-            card.appendChild(iframeWrap);
-        } else if (v.imagen) {
-            var img = document.createElement('img');
-            img.src = v.imagen;
-            img.alt = v.nombre;
-            img.style.cssText = 'width:100%; aspect-ratio:16/9; object-fit:cover; display:block;';
-            img.onerror = function() { this.parentElement.style.background='#eee'; this.style.display='none'; };
-            card.appendChild(img);
-        } else {
-            var placeholder = document.createElement('div');
-            placeholder.style.cssText = 'width:100%; aspect-ratio:16/9; background:#f0ece8; display:flex; align-items:center; justify-content:center; font-size:2rem;';
-            placeholder.textContent = '🎥';
-            card.appendChild(placeholder);
-        }
-
-        var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'padding:10px;';
-        infoDiv.innerHTML = '<strong style="font-size:0.85rem; color:#362a22; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + v.nombre + '</strong>';
-        if (v.fecha) {
-            infoDiv.innerHTML += '<span style="font-size:0.75rem; color:#aaa;">📅 ' + v.fecha + '</span>';
-        }
-        card.appendChild(infoDiv);
-        
-        grid.appendChild(card);
-    });
-
-    contenedor.innerHTML = '';
-    contenedor.appendChild(grid);
-}
-
-document.addEventListener('catalogoCargado', initBotonesRedesBiografia);
-
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FAVORITOS
-// ══════════════════════════════════════════════════════════════════════════════
-var favoritos = (JSON.parse(localStorage.getItem('elba-favoritos') || '[]')).map(Number);
-function _guardarFavoritos() { localStorage.setItem('elba-favoritos', JSON.stringify(favoritos)); }
-function toggleLike(productoIdx, btn) {
-    var idx = parseInt(productoIdx);
-    if (isNaN(idx)) return;
-    var pos = favoritos.indexOf(idx);
-    var esFav;
-    if (pos === -1) { favoritos.push(idx); esFav = true; }
-    else { favoritos.splice(pos, 1); esFav = false; }
-    _guardarFavoritos();
-    if (btn) { btn.textContent = esFav ? '❤️' : '🤍'; btn.classList.toggle('liked', esFav); }
-}
-function syncBotonesLike() {
-    var tarjetas = document.querySelectorAll('[data-idx]');
-    tarjetas.forEach(function(card) {
-        var idx = parseInt(card.getAttribute('data-idx'));
-        if (isNaN(idx)) return;
-        var esFav = favoritos.indexOf(idx) !== -1;
-        var like = card.querySelector('.btn-like');
-        if (like) { like.textContent = esFav ? '❤️' : '🤍'; like.classList.toggle('liked', esFav); }
-    });
-}
-_ready(syncBotonesLike);
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MODO OSCURO Y PILL NAV (ACTUALIZADO PARA MÚSICA)
-// ══════════════════════════════════════════════════════════════════════════════
-function toggleModoOscuro() {
-    document.body.classList.toggle('modo-oscuro');
-    localStorage.setItem('elba-modo-oscuro', document.body.classList.contains('modo-oscuro') ? '1' : '0');
-}
-if (localStorage.getItem('elba-modo-oscuro') !== '0') {
-    document.body.classList.add('modo-oscuro');
-}
-
-// Navegación por Píldoras
-var _pillBtns   = { biografia:'pillBiografia', musica:'pillMusica', proyectos:'pillProyectos', aventuras:'pillAventuras' };
-var _pillPanels = { biografia:'panelPillBiografia', musica:'panelPillMusica', proyectos:'panelPillProyectos', aventuras:'panelPillAventuras' };
-
-function activarPill(cual) {
-    // Desactivar todos
-    Object.values(_pillBtns).forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.classList.remove('activo');
-    });
-    Object.values(_pillPanels).forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.classList.remove('activo');
-    });
-
-    // Activar seleccionado
-    var btnEl = document.getElementById(_pillBtns[cual]);
-    if (btnEl) btnEl.classList.add('activo');
-    
-    var panelId = _pillPanels[cual];
-    if (panelId) {
-        var panelEl = document.getElementById(panelId);
-        if (panelEl) panelEl.classList.add('activo');
-    }
-
-    // Mostrar/Ocultar Catálogo Principal (Mis Aventuras)
-    var catalogo = document.getElementById('zona-catalogo');
-    if (catalogo) {
-        catalogo.style.display = (cual === 'aventuras') ? 'block' : 'none';
-    }
-
-    // Si es Música, renderizamos su sección especial
-    if (cual === 'musica') {
-        renderizarSeccionMusica();
-    }
-
-    // Si es Proyectos, renderizamos su sección
-    if (cual === 'proyectos') {
-        if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
-            renderizarSeccionProyectos();
-        }
-    }
-
-    // Si es Biografía, inicializar YouTube por defecto si ya cargaron los datos
-    if (cual === 'biografia') {
-        if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
-            var cont = document.getElementById('contenedorVideosRedes');
-            var ytBtn = document.getElementById('btnRedBioYT');
-            if (cont && ytBtn && !ytBtn.classList.contains('activo')) {
-                ['btnRedBioYT','btnRedBioFB','btnRedBioIG'].forEach(function(id) {
-                    var b = document.getElementById(id); if (b) b.classList.remove('activo');
-                });
-                ytBtn.classList.add('activo');
-                mostrarVideosDeRed('youtube', cont);
-            }
-        }
-    }
-}
-
-// Inicializar Pill Nav
-_ready(function() {
-    ['biografia', 'musica', 'proyectos', 'aventuras'].forEach(function(key) {
-        var btn = document.getElementById(_pillBtns[key]);
-        if (btn) {
-            btn.addEventListener('click', function() { activarPill(key); });
-        }
-    });
-    
-    // Default: Biografía
-    activarPill('biografia');
-});
+// Stubs de galería (ya no se necesitan con el nuevo modal)
+var galeriaImagenes = [];
+var galeriaIndice = 0;
+function irASlide(i) {}
+function actualizarNavegacion() {}
+function renderizarGaleria() {}
+function abrirZoomGaleria(i) {}
+function cerrarZoomGaleria() {}
+function zoomNavegar(dir) {}
+function actualizarZoom() {}
