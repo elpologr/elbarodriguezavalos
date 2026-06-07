@@ -1,5 +1,5 @@
 // ============================================================
-// ELBA RODRÍGUEZ AVALÓS — app.js (ACTUALIZADO)
+// ELBA RODRÍGUEZ AVALÓS — app.js (ACTUALIZADO CON MÚSICA)
 // JavaScript principal - Versión Portafolio Artístico
 // ============================================================
 
@@ -23,7 +23,7 @@ var listaProductos = [];
 // B: imagen
 // C: Descripcion
 // D: fecha
-// E: categoria (Ej: 'Concierto', 'Taller', 'Youtube', 'Facebook', etc.)
+// E: categoria (Usada para filtrar: 'Biografia', 'Musica', 'Proyectos', 'Mis Aventuras')
 // F: enlace (URLs de imágenes/videos extra separados por comas)
 // G: videoyoutube
 // H: videofacebook
@@ -87,7 +87,7 @@ function csvAProductos(filas) {
             id:             i,
             nombre:         get(0),
             descripcion:    get(2),
-            fecha:          get(3), // Formato esperado: AAAA-MM-DD o DD/MM/AAAA
+            fecha:          get(3), 
             categoria:      get(4),
             imagen:         imgPrincipal || (todasImagenes[0] || ''),
             imagenes:       todasImagenes,
@@ -114,26 +114,30 @@ function mostrarEstadoCarga(mensaje, esError) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO DEL CATÁLOGO
+// RENDERIZADO DEL CATÁLOGO (MIS AVENTURAS)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarCatalogoCompleto() {
     var grid = document.getElementById('gridProductos');
     if (!grid) return;
     grid.innerHTML = '';
 
+    // Filtrar solo los de categoría "Mis Aventuras" o similares si quieres separarlos
+    // Por ahora mostramos todos los que no sean música/proyectos/biografia explícita si así lo deseas,
+    // o simplemente todos ordenados por fecha.
+    
     // ORDENAR POR FECHA (Más antigua a más reciente)
-    // Intentamos parsear la fecha. Si no se puede, se deja al final.
     listaProductos.sort(function(a, b) {
         var dateA = new Date(a.fecha);
         var dateB = new Date(b.fecha);
-        // Si el formato es DD/MM/AAAA, hay que ajustarlo, pero new Date suele aceptar AAAA-MM-DD
-        // Si las fechas son inválidas, date.getTime() será NaN.
         if (isNaN(dateA.getTime())) return 1;
         if (isNaN(dateB.getTime())) return -1;
         return dateA - dateB;
     });
 
     listaProductos.forEach(function(p) {
+        // Si quieres que SOLO aparezcan en "Mis Aventuras" los que tengan esa categoría exacta:
+        // if (p.categoria.toLowerCase() !== 'mis aventuras') return; 
+
         var card = document.createElement('div');
         card.className = 'card-dinamica';
         
@@ -162,7 +166,7 @@ function renderizarCatalogoCompleto() {
         imgContenedor.appendChild(img);
         card.appendChild(imgContenedor);
 
-        // Botón favorito (corazón) - OPCIONAL: Si quieres mantener favoritos
+        // Botón favorito (corazón)
         var btnLike = document.createElement('button');
         btnLike.className = 'btn-like';
         btnLike.setAttribute('aria-label', 'Me gusta ' + p.nombre);
@@ -209,9 +213,95 @@ function renderizarCatalogoCompleto() {
         grid.appendChild(card);
     });
     
-    // Sincronizar favoritos si existen
     if (typeof syncBotonesLike === 'function') syncBotonesLike();
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDERIZADO SECCIÓN MÚSICA (GRID ESPECIAL)
+// ══════════════════════════════════════════════════════════════════════════════
+function renderizarSeccionMusica() {
+    // Buscamos un contenedor específico para música, o reutilizamos el grid principal
+    // Para este ejemplo, asumiremos que hay un div con id "gridMusica" en el panel de música.
+    // Si no existe, lo creamos dinámicamente en el panel correspondiente.
+    
+    var panelMusica = document.getElementById('panelPillMusica');
+    if (!panelMusica) return;
+
+    // Limpiar contenido previo de música si existe
+    var contenedorMusica = document.getElementById('contenedorMusica');
+    if (!contenedorMusica) {
+        contenedorMusica = document.createElement('div');
+        contenedorMusica.id = 'contenedorMusica';
+        contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px; padding:20px;';
+        panelMusica.appendChild(contenedorMusica);
+    }
+    contenedorMusica.innerHTML = '';
+
+    // Filtrar productos de categoría "Musica"
+    var musicaItems = listaProductos.filter(function(p) {
+        return p.categoria && p.categoria.toLowerCase().includes('musica');
+    });
+
+    if (musicaItems.length === 0) {
+        contenedorMusica.innerHTML = '<p style="text-align:center; width:100%; color:#888;">Próximamente agregaremos contenido musical.</p>';
+        return;
+    }
+
+    musicaItems.forEach(function(p) {
+        var card = document.createElement('div');
+        card.className = 'card-musica';
+        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s;';
+        card.onmouseover = function() { this.style.transform = 'translateY(-5px)'; };
+        card.onmouseout = function() { this.style.transform = 'translateY(0)'; };
+
+        // Imagen
+        var imgDiv = document.createElement('div');
+        imgDiv.style.cssText = 'height:200px; background:#eee; position:relative;';
+        imgDiv.innerHTML = '<img src="'+p.imagen+'" style="width:100%; height:100%; object-fit:cover;">';
+        
+        // Icono de Play superpuesto
+        var playIcon = document.createElement('div');
+        playIcon.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:50px; height:50px; background:rgba(255,255,255,0.8); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#8c7565;';
+        playIcon.innerHTML = '▶';
+        imgDiv.appendChild(playIcon);
+
+        card.appendChild(imgDiv);
+
+        // Info
+        var infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'padding:15px;';
+        infoDiv.innerHTML = '<h3 style="margin:0 0 5px; font-size:18px; color:#362a22;">'+p.nombre+'</h3>' +
+                            '<p style="margin:0; font-size:14px; color:#705c4f; line-height:1.4;">'+(p.descripcion ? p.descripcion.substring(0, 60)+'...' : '')+'</p>';
+        
+        card.appendChild(infoDiv);
+
+        // Click para abrir modal
+        card.addEventListener('click', function() {
+            // Creamos un elemento temporal tipo "card-dinamica" para usar la función existente del modal
+            var tempCard = document.createElement('div');
+            tempCard.setAttribute('data-nombre', p.nombre);
+            tempCard.setAttribute('data-descripcion', p.descripcion);
+            tempCard.setAttribute('data-imagenes', JSON.stringify(p.imagenes));
+            tempCard.setAttribute('data-video-youtube', p.videoYoutube);
+            tempCard.setAttribute('data-video-facebook', p.videoFacebook);
+            tempCard.setAttribute('data-video-instagram', p.videoInstagram);
+            tempCard.setAttribute('data-video-tiktok', p.videoTiktok);
+            
+            // Truco: añadimos una imagen fake al tempCard para que el modal la encuentre si no hay galería
+            var fakeImgContainer = document.createElement('div');
+            fakeImgContainer.className = 'img-contenedor-dinamico';
+            var fakeImg = document.createElement('img');
+            fakeImg.src = p.imagen;
+            fakeImgContainer.appendChild(fakeImg);
+            tempCard.appendChild(fakeImgContainer);
+
+            abrirModalProducto(tempCard);
+        });
+
+        contenedorMusica.appendChild(card);
+    });
+}
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CARGA DESDE GOOGLE SHEETS
@@ -319,18 +409,14 @@ function abrirModalProducto(card) {
     if (extras.length > 0) {
         aditivosZona.style.display = '';
         const tituloZona = aditivosZona.querySelector('.modal-aditivos-titulo');
-        if (tituloZona) tituloZona.textContent = '📸 Galería del evento';
+        if (tituloZona) tituloZona.textContent = '📸 Galería';
 
         extras.forEach(function(url, idx) {
             var thumb = document.createElement('div');
             thumb.style.cssText = 'width:80px; height:80px; border-radius:8px; overflow:hidden; cursor:pointer; flex-shrink:0; background:#111; position:relative;';
-            
-            // Asumimos que son imágenes. Si fueran videos, habría que detectar extensión.
             thumb.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
-            
             thumb.addEventListener('click', function() {
-                // Abrir zoom o lightbox simple
-                abrirZoomGaleria(idx + 1); // +1 porque slice empezó en 1
+                abrirZoomGaleria(idx + 1); 
             });
             aditivosScroll.appendChild(thumb);
         });
@@ -338,7 +424,7 @@ function abrirModalProducto(card) {
         aditivosZona.style.display = 'none';
     }
 
-    // Botones de Redes Sociales EN EL MODAL (si este evento tiene videos específicos)
+    // Botones de Redes Sociales EN EL MODAL
     _actualizarBotonesRedModal(videoYT, videoFB, videoIG, videoTT);
 
     // Abrir modal
@@ -356,7 +442,6 @@ function _actualizarBotonesRedModal(yt, fb, ig, tt) {
         if (!btn) return;
         var link = links[red];
         
-        // Mostrar botón solo si hay link en este evento
         if (link) {
             btn.style.display = '';
             btn.onclick = function(e) { e.stopPropagation(); _abrirVideoModal(link); };
@@ -368,7 +453,6 @@ function _actualizarBotonesRedModal(yt, fb, ig, tt) {
 
 function _abrirVideoModal(url) {
     if (!url) return;
-    // Detectar YouTube
     var ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
     if (ytMatch) {
         var overlay = document.createElement('div');
@@ -381,13 +465,11 @@ function _abrirVideoModal(url) {
         overlay.addEventListener('click', function() { overlay.remove(); });
         document.body.appendChild(overlay);
     } else {
-        // Otras redes abren en nueva pestaña
         window.open(url, '_blank');
     }
 }
 window._abrirVideoModal = _abrirVideoModal;
 
-// Funciones de Galería Modal (Existente, se mantienen)
 function _actualizarGaleriaModal() {
     renderizarGaleria();
 }
@@ -444,7 +526,7 @@ function actualizarNavegacion() {
     });
 }
 
-// Zoom Lightbox (Mantenemos la lógica básica)
+// Zoom Lightbox
 let zoomIndice = 0;
 function abrirZoomGaleria(indice) {
     zoomIndice = (indice !== undefined) ? indice : galeriaIndice;
@@ -454,7 +536,7 @@ function abrirZoomGaleria(indice) {
 }
 function cerrarZoomGaleria() {
     document.getElementById('zoomOverlay').classList.remove('abierto');
-    document.body.style.overflow = 'auto'; // Restaurar scroll si estaba cerrado el modal padre
+    document.body.style.overflow = 'auto'; 
 }
 function zoomNavegar(dir) {
     zoomIndice = Math.max(0, Math.min(zoomIndice + dir, galeriaImagenes.length - 1));
@@ -472,7 +554,6 @@ function actualizarZoom() {
     document.getElementById('zoomNext').classList.toggle('oculto-zoom', zoomIndice >= total - 1);
 }
 
-// Event Listeners para Zoom
 document.addEventListener('keydown', function(e) {
     const overlay = document.getElementById('zoomOverlay');
     if (!overlay || !overlay.classList.contains('abierto')) return;
@@ -486,30 +567,25 @@ document.getElementById('modalProducto').addEventListener('click', function(e) {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOTONES DE REDES SOCIALES EN BIOGRAFÍA (FUNCIONALIDAD NUEVA)
+// BOTONES DE REDES SOCIALES EN BIOGRAFÍA
 // ══════════════════════════════════════════════════════════════════════════════
-// Estos botones están al final de la sección Biografía.
-// Al hacer clic, muestran una grilla de videos de esa red social extraídos de la hoja de cálculo.
-
 function initBotonesRedesBiografia() {
     var btns = {
-        youtube: document.getElementById('btnRedBioYT'), // Asegúrate de poner estos IDs en tu HTML
+        youtube: document.getElementById('btnRedBioYT'), 
         facebook: document.getElementById('btnRedBioFB'),
         instagram: document.getElementById('btnRedBioIG'),
         tiktok: document.getElementById('btnRedBioTT')
     };
     
-    var contenedor = document.getElementById('contenedorVideosRedes'); // Div donde se mostrarán los videos
+    var contenedor = document.getElementById('contenedorVideosRedes'); 
 
-    if (!contenedor) return; // Si no existe el contenedor en HTML, salimos.
+    if (!contenedor) return; 
 
     Object.keys(btns).forEach(function(red) {
         if (btns[red]) {
             btns[red].addEventListener('click', function() {
-                // Toggle activo
                 Object.values(btns).forEach(b => b.classList.remove('activo'));
                 btns[red].classList.add('activo');
-                
                 mostrarVideosDeRed(red, contenedor);
             });
         }
@@ -520,8 +596,6 @@ function mostrarVideosDeRed(red, contenedor) {
     contenedor.innerHTML = '<p style="text-align:center; padding:20px;">Cargando videos...</p>';
     contenedor.style.display = 'block';
 
-    // Filtrar productos que tengan video en esta red Y cuya categoría sea relevante o simplemente tengan el link
-    // Aquí asumimos que SI tienen el link en la columna correspondiente, son para mostrar.
     var videos = listaProductos.filter(function(p) {
         var link = '';
         if (red === 'youtube') link = p.videoYoutube;
@@ -536,7 +610,6 @@ function mostrarVideosDeRed(red, contenedor) {
         return;
     }
 
-    // Renderizar grilla
     var grid = document.createElement('div');
     grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; padding:20px 0;';
     
@@ -550,14 +623,12 @@ function mostrarVideosDeRed(red, contenedor) {
         if (red === 'instagram') link = v.videoInstagram;
         if (red === 'tiktok') link = v.videoTiktok;
 
-        // Miniatura
         var thumbHTML = '';
         if (red === 'youtube') {
             var ytId = link.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
             var id = ytId ? ytId[1] : '';
             thumbHTML = '<img src="https://img.youtube.com/vi/'+id+'/hqdefault.jpg" style="width:100%; aspect-ratio:16/9; object-fit:cover;">';
         } else {
-            // Placeholder para otras redes
             thumbHTML = '<div style="width:100%; aspect-ratio:16/9; background:#eee; display:flex; align-items:center; justify-content:center; font-size:2rem;">🎥</div>';
         }
 
@@ -574,12 +645,11 @@ function mostrarVideosDeRed(red, contenedor) {
     contenedor.appendChild(grid);
 }
 
-// Inicializar cuando cargue el catálogo
 document.addEventListener('catalogoCargado', initBotonesRedesBiografia);
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// FAVORITOS (MANTENIDO)
+// FAVORITOS
 // ══════════════════════════════════════════════════════════════════════════════
 var favoritos = (JSON.parse(localStorage.getItem('elba-favoritos') || '[]')).map(Number);
 function _guardarFavoritos() { localStorage.setItem('elba-favoritos', JSON.stringify(favoritos)); }
@@ -606,7 +676,7 @@ function syncBotonesLike() {
 _ready(syncBotonesLike);
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MODO OSCURO Y PILL NAV (MANTENIDO SIMPLIFICADO)
+// MODO OSCURO Y PILL NAV (ACTUALIZADO PARA MÚSICA)
 // ══════════════════════════════════════════════════════════════════════════════
 function toggleModoOscuro() {
     document.body.classList.toggle('modo-oscuro');
@@ -616,7 +686,7 @@ if (localStorage.getItem('elba-modo-oscuro') !== '0') {
     document.body.classList.add('modo-oscuro');
 }
 
-// Navegación por Píldoras (Biografía, Música, Proyectos, Mis Aventuras)
+// Navegación por Píldoras
 var _pillBtns   = { biografia:'pillBiografia', musica:'pillMusica', proyectos:'pillProyectos', aventuras:'pillAventuras' };
 var _pillPanels = { biografia:'panelPillBiografia', musica:'panelPillMusica', proyectos:'panelPillProyectos', aventuras:'panelPillAventuras' };
 
@@ -641,18 +711,21 @@ function activarPill(cual) {
         if (panelEl) panelEl.classList.add('activo');
     }
 
-    // Mostrar/Ocultar Catálogo
+    // Mostrar/Ocultar Catálogo Principal (Mis Aventuras)
     var catalogo = document.getElementById('zona-catalogo');
     if (catalogo) {
-        // Mostramos catálogo en 'aventuras' y quizás en 'musica' o 'proyectos' según decidas.
-        // Por ahora, solo en 'aventuras' como pediste.
+        // Solo mostramos el catálogo principal en 'aventuras'
         catalogo.style.display = (cual === 'aventuras') ? 'block' : 'none';
+    }
+
+    // Si es Música, renderizamos su sección especial
+    if (cual === 'musica') {
+        renderizarSeccionMusica();
     }
 }
 
 // Inicializar Pill Nav
 _ready(function() {
-    // Asignar listeners a los botones reales del HTML si existen
     ['biografia', 'musica', 'proyectos', 'aventuras'].forEach(function(key) {
         var btn = document.getElementById(_pillBtns[key]);
         if (btn) {
@@ -660,6 +733,6 @@ _ready(function() {
         }
     });
     
-    // Default: Biografía o Aventuras
+    // Default: Biografía
     activarPill('biografia');
 });
