@@ -182,14 +182,17 @@ var SHEET_ID = '1syFSE4GiAfmvEslC038srzJyqJGMJ9AEpbUdnNgBtyE';
 // ──────────────────────────────────────────────────────────────────────────────
 // COLUMNAS ESPERADAS EN LA HOJA (fila 1 = encabezados, datos desde fila 2):
 //   A: Nombre            — nombre del concierto / evento
-//   B: Descripcion       — texto descriptivo del evento
-//   C: enlace1           — URL de imagen 1 del submenú (puede ser YT/FB/IG/TT)
-//   D: enlace2           — URL de imagen 2 del submenú
-//   E: enlace3           — URL de imagen 3 del submenú
-//   F: videoyoutube      — link de YouTube para botón en sección Biografía
-//   G: videofacebook     — link de Facebook para botón en sección Biografía
-//   H: videoinstagram    — link de Instagram para botón en sección Biografía
-//   I: videotiktok       — link de TikTok para botón en sección Biografía
+//   B: imagen            — URL de la imagen principal
+//   C: Descripcion       — texto descriptivo del evento
+//   D: fecha             — fecha del evento
+//   E: categoria         — categoría / tipo de evento
+//   F: enlace1           — URL de imagen extra 1
+//   G: enlace2           — URL de imagen extra 2
+//   H: enlace3           — URL de imagen extra 3
+//   I: videoyoutube      — link de YouTube
+//   J: videofacebook     — link de Facebook
+//   K: videoinstagram    — link de Instagram
+//   L: videotiktok       — link de TikTok
 // ══════════════════════════════════════════════════════════════════════════════
 
 var listaProductos = [];
@@ -232,6 +235,19 @@ function parsearCSV(texto) {
 }
 
 // ── Convierte filas CSV en objetos de evento ──
+// COLUMNAS (12 en total, fila 1 = encabezados):
+//   A=0  Nombre
+//   B=1  imagen          — URL de imagen principal
+//   C=2  Descripcion
+//   D=3  fecha
+//   E=4  categoria
+//   F=5  enlace1
+//   G=6  enlace2
+//   H=7  enlace3
+//   I=8  videoyoutube
+//   J=9  videofacebook
+//   K=10 videoinstagram
+//   L=11 videotiktok
 function csvAProductos(filas) {
     if (filas.length < 2) return [];
     var productos = [];
@@ -242,37 +258,40 @@ function csvAProductos(filas) {
         // Saltar filas sin nombre
         if (!get(0)) continue;
 
-        // A=0 Nombre, B=1 Descripcion,
-        // C=2 enlace1, D=3 enlace2, E=4 enlace3,
-        // F=5 videoyoutube, G=6 videofacebook, H=7 videoinstagram, I=8 videotiktok
-
-        var enlaces = [get(2), get(3), get(4)].filter(Boolean);
+        // La imagen principal viene de la columna B (índice 1)
+        // Las imágenes adicionales / galería vienen de enlace1/2/3 (cols F,G,H)
+        var imgPrincipal = get(1);
+        var galeria = [get(5), get(6), get(7)].filter(Boolean);
+        // Si no hay galería pero hay imagen principal, incluirla como primera imagen
+        var todasImagenes = imgPrincipal ? [imgPrincipal].concat(galeria) : galeria;
 
         productos.push({
             id:            i,
             nombre:        get(0),
             precioNormal:  0,
             precioBazar:   0,
-            descripcion:   get(1),
-            imagen:        enlaces[0] || '',
-            imagenes:      enlaces,
+            descripcion:   get(2),
+            fecha:         get(3),
+            categoria:     get(4),
+            imagen:        imgPrincipal || todasImagenes[0] || '',
+            imagenes:      todasImagenes,
             forma:         '',
-            tipo:          'concierto',
-            tipos:         ['concierto'],
+            tipo:          get(4) || 'concierto',
+            tipos:         [get(4) || 'concierto'],
             subtags:       '',
             eventos:       '',
-            etiquetas:     ['concierto'],
+            etiquetas:     [get(4) || 'concierto'],
             aditivos:      [],
             alto:          '',
             ancho:         '',
             subImagenes:   [],
-            enlace1:       get(2),
-            enlace2:       get(3),
-            enlace3:       get(4),
-            videoYoutube:  get(5),
-            videoFacebook: get(6),
-            videoInstagram:get(7),
-            videoTiktok:   get(8)
+            enlace1:       get(5),
+            enlace2:       get(6),
+            enlace3:       get(7),
+            videoYoutube:  get(8),
+            videoFacebook: get(9),
+            videoInstagram:get(10),
+            videoTiktok:   get(11)
         });
     }
     return productos;
@@ -418,6 +437,9 @@ function cargarDesdeGoogleSheets() {
             }
 
             listaProductos = productos;
+            // Ocultar el texto intro de Mis Aventuras una vez que carguen los datos
+            var introMisAventuras = document.getElementById('mis-aventuras-intro');
+            if (introMisAventuras) introMisAventuras.style.display = 'none';
             renderizarCatalogoCompleto();
 
             // Re-ejecutar los scripts que procesan las cards (subtags, aditivos, miniaturas, etc.)

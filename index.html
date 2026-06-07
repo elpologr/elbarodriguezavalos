@@ -375,9 +375,9 @@
         <!-- Botones de navegación de sección -->
         <div class="botones-seccion">
             <button class="btn-seccion activo" id="btn-biografia" onclick="mostrarSeccion('biografia')">Biografía</button>
-            <button class="btn-seccion" id="btn-videos"    onclick="mostrarSeccion('videos')">Videos</button>
+            <button class="btn-seccion" id="btn-musica"    onclick="mostrarSeccion('musica')">Música</button>
             <button class="btn-seccion" id="btn-proyectos" onclick="mostrarSeccion('proyectos')">Proyectos</button>
-            <button class="btn-seccion dos-renglones" id="btn-zona-interactiva" onclick="mostrarSeccion('zona-interactiva')">Zona<br>Interactiva</button>
+            <button class="btn-seccion dos-renglones" id="btn-mis-aventuras" onclick="mostrarSeccion('mis-aventuras')">Mis<br>Aventuras</button>
         </div>
 
         <!-- ── ZONA BIOGRAFÍA ── -->
@@ -417,8 +417,8 @@
             </div>
         </div>
 
-        <!-- ── ZONA VIDEOS ── -->
-        <div class="zona-contenido" id="zona-videos">
+        <!-- ── ZONA MÚSICA ── -->
+        <div class="zona-contenido" id="zona-musica">
 
             <div class="video-contenedor">
                 <iframe src="https://www.youtube.com/embed/PLACEHOLDER1?rel=0&modestbranding=1"
@@ -451,11 +451,12 @@
             </div>
         </div>
 
-        <!-- ── ZONA INTERACTIVA ── -->
-        <div class="zona-contenido" id="zona-zona-interactiva">
-            <div class="proyectos-intro">
-                🎶 ¡Bienvenido a la Zona Interactiva! Aquí podrás explorar los conciertos y presentaciones de Elba Rodríguez Avalós. Próximamente habrá actividades y contenidos especiales para las infancias.
+        <!-- ── ZONA MIS AVENTURAS ── -->
+        <div class="zona-contenido" id="zona-mis-aventuras">
+            <div class="proyectos-intro" id="mis-aventuras-intro">
+                🎶 ¡Bienvenido a Mis Aventuras! Aquí podrás explorar los conciertos y presentaciones de Elba Rodríguez Avalós.
             </div>
+            <div id="gridProductos" class="grid-productos"></div>
         </div>
 
     </div>
@@ -469,7 +470,6 @@
             document.querySelectorAll('.zona-contenido').forEach(z => z.classList.remove('activa'));
             document.querySelectorAll('.btn-seccion').forEach(b => b.classList.remove('activo'));
 
-            // El id del div usa 'zona-' + cual, excepto zona-interactiva que ya lo tiene en el nombre
             var zonaId = 'zona-' + cual;
             var zonaEl = document.getElementById(zonaId);
             if (zonaEl) zonaEl.classList.add('activa');
@@ -484,6 +484,15 @@
                 if (typeof detenerTodosLosVideos === 'function') detenerTodosLosVideos();
                 if (typeof _resetBotonesRed === 'function') _resetBotonesRed();
                 window._redActiva = null;
+            }
+
+            // Si entramos a Mis Aventuras, renderizar el catálogo si ya está cargado
+            if (cual === 'mis-aventuras') {
+                if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
+                    var intro = document.getElementById('mis-aventuras-intro');
+                    if (intro) intro.style.display = 'none';
+                    if (typeof renderizarCatalogoCompleto === 'function') renderizarCatalogoCompleto();
+                }
             }
         }
 
