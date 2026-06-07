@@ -18,16 +18,14 @@ function _ready(fn) {
 var SHEET_ID = '1syFSE4GiAfmvEslC038srzJyqJGMJ9AEpbUdnNgBtyE'; // Tu ID actual
 var listaProductos = [];
 
-// COLUMNAS ESPERADAS (Estructura actualizada):
-// A: Nombre
-// B: imagen
-// C: Descripcion  ← Usada para clasificar sección: 'aventura', 'proyecto', 'música', 'red'
-// D: fecha        ← Ordenamiento (más reciente primero)
-// E: categoria    ← Para Música: nombre del disco/álbum. Para Redes: 'youtube', 'facebook', 'instagram'
-// F: enlace       (URLs de imágenes/videos extra separados por comas)
-// G: videoyoutube
-// H: videofacebook
-// I: videoinstagram
+// COLUMNAS DEL SHEET (estructura real actual):
+// A (0): Nombre
+// B (1): imagen/video  ← URL de imagen o YouTube
+// C (2): Descripcion
+// D (3): fecha
+// E (4): categoria     ← Para Biografía: 'youtube', 'facebook', 'instagram'. Para Música: álbum/disco
+// F (5): enlace        ← (reservado / vacío actualmente)
+// G (6): seccion       ← 'musica', 'aventura', 'proyecto', 'biografia'
 
 // ── Parser de CSV ──
 function parsearCSV(texto) {
@@ -74,25 +72,33 @@ function csvAProductos(filas) {
         
         if (!get(0)) continue; // Saltar filas vacías
 
-        // Procesar columna 'enlace' (índice 5) separada por comas
+        // Col B puede ser imagen o URL de YouTube
+        var colB = get(1);
+        var esYouTube = colB.includes('youtube.com') || colB.includes('youtu.be');
+
+        // Imágenes adicionales en col F (separadas por coma), solo si parecen URLs de imagen
         var enlacesRaw = get(5);
-        var galeria = enlacesRaw ? enlacesRaw.split(',').map(function(u){ return u.trim(); }).filter(Boolean) : [];
+        var galeria = enlacesRaw ? enlacesRaw.split(',').map(function(u){ return u.trim(); }).filter(function(u) {
+            return u.startsWith('http') || u.startsWith('/');
+        }) : [];
         
-        // Imagen principal (índice 1)
-        var imgPrincipal = get(1);
+        var imgPrincipal = esYouTube ? '' : colB;
+        var videoYT = esYouTube ? colB : '';
         var todasImagenes = imgPrincipal ? [imgPrincipal].concat(galeria) : galeria;
 
         productos.push({
             id:             i,
             nombre:         get(0),
             descripcion:    get(2),
-            fecha:          get(3), 
-            categoria:      get(4),
+            fecha:          get(3),
+            categoria:      get(4),   // SECCIÓN: 'musica', 'aventura', 'proyecto', 'biografia'
+            enlace:         get(5),   // Para biografía: 'youtube', 'facebook', 'instagram'
+            seccion:        get(6),   // Nombre del álbum/subsección (p.ej. "A Viajar se ha Dicho")
             imagen:         imgPrincipal || (todasImagenes[0] || ''),
             imagenes:       todasImagenes,
-            videoYoutube:   get(6),
-            videoFacebook:  get(7),
-            videoInstagram: get(8)
+            videoYoutube:   videoYT,
+            videoFacebook:  '',
+            videoInstagram: ''
         });
     }
     return productos;
@@ -111,6 +117,13 @@ function mostrarEstadoCarga(mensaje, esError) {
         '</div>';
 }
 
+// ── Helper: extrae ID de YouTube de cualquier URL ──
+function _extraerYTId(url) {
+    if (!url) return '';
+    var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : '';
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // RENDERIZADO DEL CATÁLOGO (MIS AVENTURAS)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -119,9 +132,9 @@ function renderizarCatalogoCompleto() {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // Filtrar solo los que en la columna Descripción diga 'aventura'
+    // Filtrar por columna 'categoria' = 'aventura'
     var items = listaProductos.filter(function(p) {
-        return p.descripcion && p.descripcion.toLowerCase().includes('aventura');
+        return p.categoria && p.categoria.toLowerCase().includes('aventura');
     });
 
     // ORDENAR POR FECHA — más reciente primero
@@ -217,7 +230,7 @@ function renderizarCatalogoCompleto() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN MÚSICA (GRID DE 3 COLUMNAS CON ÁLBUM)
+// RENDERIZADO SECCIÓN MÚSICA (GRID DE 3 COLUMNAS — iframes embebidos)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarSeccionMusica() {
     var panelMusica = document.getElementById('panelPillMusica');
@@ -232,9 +245,9 @@ function renderizarSeccionMusica() {
     contenedorMusica.innerHTML = '';
     contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar por columna Descripción que contenga 'música'
+    // Filtrar por columna 'categoria' = 'musica'
     var musicaItems = listaProductos.filter(function(p) {
-        return p.descripcion && p.descripcion.toLowerCase().includes('música');
+        return p.categoria && p.categoria.toLowerCase().includes('musica');
     });
 
     // Ordenar: más reciente primero
@@ -253,21 +266,21 @@ function renderizarSeccionMusica() {
     musicaItems.forEach(function(p) {
         var card = document.createElement('div');
         card.className = 'card-musica';
-        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s;';
-        card.onmouseover = function() { this.style.transform = 'translateY(-5px)'; };
-        card.onmouseout  = function() { this.style.transform = 'translateY(0)'; };
+        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);';
 
-        // Imagen con icono de play
-        var imgDiv = document.createElement('div');
-        imgDiv.style.cssText = 'height:160px; background:#eee; position:relative;';
-        imgDiv.innerHTML = '<img src="' + p.imagen + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; this.parentElement.style.background=\'#d9cfc8\'">';
-        var playIcon = document.createElement('div');
-        playIcon.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:44px; height:44px; background:rgba(255,255,255,0.85); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; color:#8c7565;';
-        playIcon.innerHTML = '▶';
-        imgDiv.appendChild(playIcon);
-        card.appendChild(imgDiv);
+        // Si hay YouTube, embeber iframe; si hay imagen, mostrarla
+        if (p.videoYoutube) {
+            var ytId = _extraerYTId(p.videoYoutube);
+            if (ytId) {
+                card.innerHTML = '<div style="position:relative; padding-top:56.25%;"><iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>';
+            }
+        } else if (p.imagen) {
+            card.innerHTML = '<img src="' + p.imagen + '" style="width:100%; aspect-ratio:16/9; object-fit:cover;" onerror="this.parentElement.style.background=\'#d9cfc8\'; this.style.display=\'none\'">';
+        }
 
-        // Info: nombre + álbum (columna Categoría)
+        // Info: nombre + álbum (columna Categoría = col E = p.enlace que en el sheet es col F... 
+        // Pero en música, el album/disco viene en la columna 'seccion' que tiene el texto largo.
+        // Revisando el Sheet: "seccion" de música = "A Viajar se ha Dicho" etc.
         var infoDiv = document.createElement('div');
         infoDiv.style.cssText = 'padding:12px 14px;';
         var h3 = document.createElement('h3');
@@ -275,41 +288,30 @@ function renderizarSeccionMusica() {
         h3.textContent = p.nombre;
         infoDiv.appendChild(h3);
 
-        // Álbum o disco (columna Categoría)
-        if (p.categoria) {
+        // Álbum/disco — en col G (seccion) viene el nombre del álbum
+        var album = p.seccion || '';
+        if (album) {
             var albumP = document.createElement('p');
             albumP.style.cssText = 'margin:0; font-size:12px; color:#8c7565; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
-            albumP.innerHTML = '💿 ' + p.categoria;
+            albumP.innerHTML = '💿 ' + album;
             infoDiv.appendChild(albumP);
         }
 
+        if (p.fecha) {
+            var fechaP = document.createElement('p');
+            fechaP.style.cssText = 'margin:4px 0 0; font-size:11px; color:#aaa;';
+            fechaP.textContent = '📅 ' + p.fecha;
+            infoDiv.appendChild(fechaP);
+        }
+
         card.appendChild(infoDiv);
-
-        // Click: abrir modal
-        card.addEventListener('click', function() {
-            var tempCard = document.createElement('div');
-            tempCard.setAttribute('data-nombre', p.nombre);
-            tempCard.setAttribute('data-descripcion', p.descripcion);
-            tempCard.setAttribute('data-imagenes', JSON.stringify(p.imagenes));
-            tempCard.setAttribute('data-video-youtube', p.videoYoutube || '');
-            tempCard.setAttribute('data-video-facebook', p.videoFacebook || '');
-            tempCard.setAttribute('data-video-instagram', p.videoInstagram || '');
-            var fakeImgContainer = document.createElement('div');
-            fakeImgContainer.className = 'img-contenedor-dinamico';
-            var fakeImg = document.createElement('img');
-            fakeImg.src = p.imagen;
-            fakeImgContainer.appendChild(fakeImg);
-            tempCard.appendChild(fakeImgContainer);
-            abrirModalProducto(tempCard);
-        });
-
         contenedorMusica.appendChild(card);
     });
 }
 
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN PROYECTOS (GRID DE 3 + MODAL)
+// RENDERIZADO SECCIÓN PROYECTOS (GRID DE 3 — iframes embebidos)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarSeccionProyectos() {
     var panelProyectos = document.getElementById('panelPillProyectos');
@@ -324,8 +326,9 @@ function renderizarSeccionProyectos() {
     cont.innerHTML = '';
     cont.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
+    // Filtrar por columna 'categoria' = 'proyecto'
     var items = listaProductos.filter(function(p) {
-        return p.descripcion && p.descripcion.toLowerCase().includes('proyecto');
+        return p.categoria && p.categoria.toLowerCase().includes('proyecto');
     });
 
     items.sort(function(a, b) {
@@ -343,28 +346,27 @@ function renderizarSeccionProyectos() {
     items.forEach(function(p) {
         var card = document.createElement('div');
         card.className = 'card-dinamica';
-        card.setAttribute('data-idx', String(p.id));
-        card.setAttribute('data-nombre', p.nombre);
-        card.setAttribute('data-imagenes', JSON.stringify(p.imagenes || []));
-        card.setAttribute('data-descripcion', p.descripcion || '');
-        card.setAttribute('data-categoria', p.categoria || '');
-        card.setAttribute('data-fecha', p.fecha || '');
-        card.setAttribute('data-video-youtube', p.videoYoutube || '');
-        card.setAttribute('data-video-facebook', p.videoFacebook || '');
-        card.setAttribute('data-video-instagram', p.videoInstagram || '');
-        card.style.cursor = 'pointer';
+        card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);';
 
-        var imgCont = document.createElement('div');
-        imgCont.className = 'img-contenedor-dinamico';
-        var img = document.createElement('img');
-        img.src = p.imagen; img.alt = p.nombre;
-        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#eee'; };
-        imgCont.appendChild(img);
-        card.appendChild(imgCont);
+        // Si hay YouTube, embeber iframe; si hay imagen, mostrarla
+        if (p.videoYoutube) {
+            var ytId = _extraerYTId(p.videoYoutube);
+            if (ytId) {
+                var mediaDiv = document.createElement('div');
+                mediaDiv.style.cssText = 'position:relative; padding-top:56.25%;';
+                mediaDiv.innerHTML = '<iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>';
+                card.appendChild(mediaDiv);
+            }
+        } else if (p.imagen) {
+            var imgEl = document.createElement('img');
+            imgEl.src = p.imagen; imgEl.alt = p.nombre;
+            imgEl.style.cssText = 'width:100%; aspect-ratio:16/9; object-fit:cover; display:block;';
+            imgEl.onerror = function() { this.style.display='none'; this.parentElement.style.background='#eee'; };
+            card.appendChild(imgEl);
+        }
 
         var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'margin-top:10px; flex-grow:1; padding:0 5px;';
+        infoDiv.style.cssText = 'padding:12px 14px;';
         var h3 = document.createElement('h3');
         h3.style.cssText = 'font-size:15px; margin:5px 0; font-weight:700; color:#362a22;';
         h3.textContent = p.nombre;
@@ -375,17 +377,15 @@ function renderizarSeccionProyectos() {
             fechaP.textContent = '📅 ' + p.fecha;
             infoDiv.appendChild(fechaP);
         }
+        if (p.descripcion) {
+            var descP = document.createElement('p');
+            descP.style.cssText = 'font-size:13px; color:#705c4f; margin:4px 0 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;';
+            descP.textContent = p.descripcion;
+            infoDiv.appendChild(descP);
+        }
         card.appendChild(infoDiv);
-
-        card.addEventListener('click', function(e) {
-            if (e.target.closest && e.target.closest('.btn-like')) return;
-            abrirModalProducto(card);
-        });
-
         cont.appendChild(card);
     });
-
-    if (typeof syncBotonesLike === 'function') syncBotonesLike();
 }
 
 
@@ -691,9 +691,10 @@ function mostrarVideosDeRed(red, contenedor) {
         textoInfo.textContent = 'Estás viendo las publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' de Elba Rodríguez';
     }
 
-    // Filtrar por columna Categoría (no por campo de video) para redes
+    // Filtrar: categoria='biografia' Y enlace='youtube'/'facebook'/'instagram'
     var videos = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase() === red.toLowerCase();
+        return p.categoria && p.categoria.toLowerCase().includes('biografia') &&
+               p.enlace && p.enlace.toLowerCase() === red.toLowerCase();
     });
 
     if (videos.length === 0) {
@@ -706,32 +707,38 @@ function mostrarVideosDeRed(red, contenedor) {
     
     videos.forEach(function(v) {
         var card = document.createElement('div');
-        card.style.cssText = 'background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s;';
-        card.onmouseover = function() { this.style.transform='translateY(-3px)'; };
-        card.onmouseout  = function() { this.style.transform='translateY(0)'; };
+        card.style.cssText = 'background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);';
 
-        // Determinar link de video según red
-        var link = '';
-        if (red === 'youtube')   link = v.videoYoutube;
-        if (red === 'facebook')  link = v.videoFacebook;
-        if (red === 'instagram') link = v.videoInstagram;
+        // Col B contiene la URL de YouTube para las entradas de biografía
+        var ytId = _extraerYTId(v.videoYoutube || v.imagen || '');
 
-        var thumbHTML = '';
-        if (red === 'youtube' && link) {
-            var ytId = link.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
-            var id = ytId ? ytId[1] : '';
-            thumbHTML = '<img src="https://img.youtube.com/vi/' + id + '/hqdefault.jpg" style="width:100%; aspect-ratio:16/9; object-fit:cover;" alt="' + v.nombre + '">';
+        if (red === 'youtube' && ytId) {
+            // Iframe embebido directo
+            var iframeWrap = document.createElement('div');
+            iframeWrap.style.cssText = 'position:relative; padding-top:56.25%;';
+            iframeWrap.innerHTML = '<iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;inset:0;width:100%;height:100%;border:none;" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe>';
+            card.appendChild(iframeWrap);
         } else if (v.imagen) {
-            thumbHTML = '<img src="' + v.imagen + '" style="width:100%; aspect-ratio:16/9; object-fit:cover;" alt="' + v.nombre + '" onerror="this.parentElement.style.background=\'#eee\'; this.style.display=\'none\'">';
+            var img = document.createElement('img');
+            img.src = v.imagen;
+            img.alt = v.nombre;
+            img.style.cssText = 'width:100%; aspect-ratio:16/9; object-fit:cover; display:block;';
+            img.onerror = function() { this.parentElement.style.background='#eee'; this.style.display='none'; };
+            card.appendChild(img);
         } else {
-            thumbHTML = '<div style="width:100%; aspect-ratio:16/9; background:#f0ece8; display:flex; align-items:center; justify-content:center; font-size:2rem;">🎥</div>';
+            var placeholder = document.createElement('div');
+            placeholder.style.cssText = 'width:100%; aspect-ratio:16/9; background:#f0ece8; display:flex; align-items:center; justify-content:center; font-size:2rem;';
+            placeholder.textContent = '🎥';
+            card.appendChild(placeholder);
         }
 
-        card.innerHTML = thumbHTML + '<div style="padding:10px;"><strong style="font-size:0.85rem; color:#362a22; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + v.nombre + '</strong></div>';
-        
-        if (link) {
-            card.addEventListener('click', function() { _abrirVideoModal(link); });
+        var infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'padding:10px;';
+        infoDiv.innerHTML = '<strong style="font-size:0.85rem; color:#362a22; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + v.nombre + '</strong>';
+        if (v.fecha) {
+            infoDiv.innerHTML += '<span style="font-size:0.75rem; color:#aaa;">📅 ' + v.fecha + '</span>';
         }
+        card.appendChild(infoDiv);
         
         grid.appendChild(card);
     });
