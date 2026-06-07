@@ -180,6 +180,17 @@
             font-size: 16px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
         }
+        /* Badge de tipo de medio en tarjetas de Mis Aventuras */
+        .badge-tipo-medio {
+            position: absolute; bottom: 8px; left: 8px;
+            background: rgba(0,0,0,0.55);
+            border-radius: 20px;
+            padding: 3px 9px;
+            font-size: 15px;
+            line-height: 1.4;
+            pointer-events: none;
+            user-select: none;
+        }
 
         /* --- BIOGRAFÍA --- */
         .bio-bloque {
@@ -515,11 +526,6 @@
                 <div id="modalDots"></div>
             </div>
             <div class="modal-body">
-                <div id="modalPrecioSuperior" style="display:none"></div>
-                <div id="mpPrecioFilaCompleta" style="display:none">
-                    <span id="mpPrecioOriginalFila"></span>
-                    <span id="mpPrecioBazarFila"></span>
-                </div>
                 <div id="modalDescripcionZona">
                     <p id="modalDescripcionTexto"></p>
                 </div>

@@ -160,6 +160,11 @@ function _extraerYTId(url) {
     return m ? m[1] : '';
 }
 
+// ── Helper: devuelve 'video' o 'imagen' según el contenido del item ──
+function _tipoMedio(p) {
+    return (p.videoYoutube) ? 'video' : 'imagen';
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // RENDERIZADO DEL CATÁLOGO (MIS AVENTURAS)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -204,15 +209,28 @@ function renderizarCatalogoCompleto() {
         
         card.style.cursor = 'pointer';
 
-        // Imagen principal
+        // Imagen principal — si es video de YouTube, usamos su thumbnail
         var imgContenedor = document.createElement('div');
         imgContenedor.className = 'img-contenedor-dinamico';
+        var esVideo = _tipoMedio(p) === 'video';
+        var ytId = esVideo ? _extraerYTId(p.videoYoutube) : '';
+        var srcImagen = esVideo && ytId
+            ? 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg'
+            : p.imagen;
+
         var img = document.createElement('img');
-        img.src = p.imagen;
+        img.src = srcImagen;
         img.alt = p.nombre;
         img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
-        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#eee'; };
+        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#f0ece8'; };
         imgContenedor.appendChild(img);
+
+        // Badge de tipo de medio (🎬 video / 📷 imagen)
+        var badge = document.createElement('span');
+        badge.className = 'badge-tipo-medio';
+        badge.textContent = esVideo ? '🎬' : '📷';
+        badge.title = esVideo ? 'Video de YouTube' : 'Galería de imágenes';
+        imgContenedor.appendChild(badge);
         card.appendChild(imgContenedor);
 
         // Botón favorito (corazón)
@@ -460,30 +478,13 @@ function cargarDesdeGoogleSheets() {
 
             listaProductos = productos;
 
-            // Cuadro de diagnóstico visible en pantalla (desaparece en 8s)
-            var counts = {
-                total:    productos.length,
-                musica:   productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
-                biografia:productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
-                aventura: productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
-                proyecto: productos.filter(function(p){ return p.categoriaNorm === 'proyecto'; }).length,
-                youtube:  productos.filter(function(p){ return p.categoriaNorm === 'youtube'; }).length,
-                facebook: productos.filter(function(p){ return p.categoriaNorm === 'facebook'; }).length,
-            };
-            var diag = document.createElement('div');
-            diag.id = 'diagElba';
-            diag.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#1a1a2e;color:#fff;padding:14px 18px;border-radius:10px;font-size:13px;line-height:1.8;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:300px;';
-            diag.innerHTML = '<strong>✅ Hoja conectada</strong><br>' +
-                '📦 Total filas: <strong>' + counts.total + '</strong><br>' +
-                '🎵 musica: <strong>' + counts.musica + '</strong><br>' +
-                '📖 biografia: <strong>' + counts.biografia + '</strong><br>' +
-                '🏕 aventura: <strong>' + counts.aventura + '</strong><br>' +
-                '🎨 proyecto: <strong>' + counts.proyecto + '</strong><br>' +
-                '▶️ youtube (cat directa): <strong>' + counts.youtube + '</strong><br>' +
-                '📘 facebook (cat directa): <strong>' + counts.facebook + '</strong><br>' +
-                '<small style="opacity:0.6">Desaparece en 8 segundos</small>';
-            document.body.appendChild(diag);
-            setTimeout(function(){ var d=document.getElementById('diagElba'); if(d) d.remove(); }, 8000);
+            // Diagnóstico solo en consola (abre DevTools → Console para ver)
+            console.log('[Elba] ✅ Hoja conectada | Total:', productos.length,
+                '| musica:', productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
+                '| biografia:', productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
+                '| aventura:', productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
+                '| proyecto:', productos.filter(function(p){ return p.categoriaNorm === 'proyecto'; }).length
+            );
 
             var intro = document.getElementById('mis-aventuras-intro');
             if (intro) intro.style.display = 'none';
@@ -533,16 +534,6 @@ function abrirModalProducto(card) {
 
     galeriaIndice = 0;
     document.getElementById('modalProdTitulo').textContent = nombre;
-
-    // OCULTAR PRECIOS (Ya no somos tienda)
-    const precioBadge  = document.getElementById('modalPrecioSuperior');
-    const precioFila   = document.getElementById('mpPrecioOriginalFila');
-    const bazarFila    = document.getElementById('mpPrecioBazarFila');
-    const filaCompleta = document.getElementById('mpPrecioFilaCompleta');
-    if (precioBadge) precioBadge.style.display = 'none';
-    if (precioFila) precioFila.style.display = 'none';
-    if (bazarFila) bazarFila.style.display = 'none';
-    if (filaCompleta) filaCompleta.style.display = 'none';
 
     // Descripción
     const descTexto = document.getElementById('modalDescripcionTexto');
