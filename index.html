@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elba Rodriguez Avalos - Música, Historia y Conciertos Infantiles</title>
     <style>
-        /* --- ESTILOS GENERALES --- */
         body {
             margin: 0;
             padding: 0;
@@ -14,7 +13,7 @@
             color: #3d312a;
         }
 
-        /* --- BANNER REAL (IMAGEN ESTÁTICA) --- */
+        /* --- BANNER --- */
         .banner-contenedor {
             position: relative;
             width: 100%;
@@ -22,15 +21,11 @@
             overflow: hidden;
             border-bottom: 5px solid #e1b12c;
         }
-
         .banner-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center top;
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center top;
             display: block;
         }
-
         .capa-oscura-banner {
             position: absolute;
             top: 0; left: 0;
@@ -44,18 +39,16 @@
             padding: 0 20px;
             box-sizing: border-box;
         }
-
         .capa-oscura-banner h1 {
             margin: 0;
             font-size: 46px;
             font-family: 'Georgia', serif;
-            color: #ffffff;
+            color: #fff;
             letter-spacing: 1px;
             text-shadow: 2px 2px 10px rgba(0,0,0,0.7);
         }
-
         .capa-oscura-banner p {
-            margin: 15px auto 0 auto;
+            margin: 15px auto 0;
             font-size: 20px;
             max-width: 600px;
             color: #f5f6fa;
@@ -64,7 +57,7 @@
             text-shadow: 1px 1px 6px rgba(0,0,0,0.7);
         }
 
-        /* --- BANDA DE REDES SOCIALES --- */
+        /* --- BANDA DE REDES --- */
         .banda-redes {
             display: flex;
             justify-content: center;
@@ -76,27 +69,18 @@
             border-bottom: 1px solid #eee;
         }
         .red-social {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 9px 18px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            transition: transform 0.2s, filter 0.2s;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
+            display: flex; align-items: center; gap: 7px;
+            padding: 9px 18px; border-radius: 30px;
+            text-decoration: none; font-size: 14px; font-weight: 600;
+            color: white; transition: transform 0.2s, filter 0.2s;
+            border: none; cursor: pointer; font-family: inherit;
         }
         .red-social:hover { transform: translateY(-2px); filter: brightness(1.12); }
         .red-social svg { width: 20px; height: 20px; flex-shrink: 0; }
-        .red-social.correo  { background: #cd8433; }
-        .red-social.yt      { background: #FF0000; }
-        .red-social.fb      { background: #1877F2; }
-        .red-social.ig      { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
-        .red-social.tt      { background: #000; }
+        .red-social.correo { background: #cd8433; }
+        .red-social.yt     { background: #FF0000; }
+        .red-social.fb     { background: #1877F2; }
+        .red-social.ig     { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
         @media (max-width: 500px) {
             .red-social span { display: none; }
             .red-social { padding: 10px; border-radius: 50%; }
@@ -105,7 +89,7 @@
 
         /* --- CONTENEDOR PRINCIPAL --- */
         .contenedor-principal {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -113,67 +97,93 @@
         /* --- TÍTULO DE SECCIÓN --- */
         .seccion-titulo {
             text-align: center;
-            margin: 48px 0 10px 0;
+            margin: 48px 0 10px;
             font-size: 38px;
             font-family: 'Georgia', serif;
             color: #3d312a;
             font-weight: 700;
-            position: relative;
         }
         .seccion-titulo::after {
             content: '';
             display: block;
-            width: 70px;
-            height: 3px;
+            width: 70px; height: 3px;
             background: #e1b12c;
-            margin: 10px auto 0 auto;
+            margin: 10px auto 0;
             border-radius: 2px;
         }
 
-        /* --- BOTONES DE SECCIÓN --- */
-        .botones-seccion {
+        /* --- PILL NAV (botones de sección) --- */
+        .pill-nav {
             display: flex;
             justify-content: center;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin: 24px 0 40px 0;
+            margin: 24px 0 36px;
         }
-        .btn-seccion {
-            padding: 16px 48px;
+        .pill-btn {
+            padding: 14px 40px;
             border-radius: 35px;
             border: 3px solid #3d312a;
             background: #fff;
             color: #3d312a;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
             font-family: inherit;
         }
-        .btn-seccion:hover {
-            background: #cd8433;
-            border-color: #cd8433;
-            color: #fff;
-        }
-        .btn-seccion.activo {
-            background: #cd8433;
-            border-color: #cd8433;
-            color: #fff;
-        }
+        .pill-btn:hover { background: #cd8433; border-color: #cd8433; color: #fff; }
+        .pill-btn.activo { background: #cd8433; border-color: #cd8433; color: #fff; }
         @media (max-width: 500px) {
-            .btn-seccion {
-                padding: 12px 24px;
-                font-size: 15px;
-            }
+            .pill-btn { padding: 10px 22px; font-size: 14px; }
         }
 
-        /* --- ZONAS DE CONTENIDO --- */
-        .zona-contenido { display: none; margin-bottom: 60px; }
-        .zona-contenido.activa { display: block; }
+        /* --- PANELES DE SECCIÓN --- */
+        .panel-pill { display: none; margin-bottom: 60px; }
+        .panel-pill.activo { display: block; }
+
+        /* --- ZONA CATÁLOGO (Aventuras) --- */
+        #zona-catalogo { display: none; margin-bottom: 60px; }
+        .grid-productos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 10px 0;
+        }
+        @media (max-width: 700px) { .grid-productos { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 450px) { .grid-productos { grid-template-columns: 1fr; } }
+
+        /* --- CARDS DINÁMICAS --- */
+        .card-dinamica {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+            display: flex;
+            flex-direction: column;
+        }
+        .img-contenedor-dinamico {
+            position: relative;
+            height: 160px;
+            background: #eee;
+            overflow: hidden;
+        }
+        .img-contenedor-dinamico img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .btn-like {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(255,255,255,0.85);
+            border: none; border-radius: 50%;
+            width: 32px; height: 32px;
+            font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
 
         /* --- BIOGRAFÍA --- */
         .bio-bloque {
-            background: #ffffff;
+            background: #fff;
             padding: 36px 40px;
             border-radius: 15px;
             border: 1px solid #f1e9db;
@@ -194,148 +204,206 @@
             margin-bottom: 18px;
         }
 
-        /* --- VIDEOS --- */
-        .video-contenedor {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border-radius: 14px;
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-            margin-bottom: 12px;
-        }
-        .video-contenedor iframe {
-            position: absolute;
-            inset: 0;
-            width: 100%; height: 100%;
-            border: none;
-        }
-        .video-descripcion {
-            font-size: 14px;
-            line-height: 1.7;
-            color: #5a4b42;
-            margin-bottom: 36px;
-            padding: 0 4px;
-        }
-        .video-descripcion em {
-            color: #999;
-            font-style: italic;
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-        }
-
-        /* --- PROYECTOS --- */
-        .proyectos-intro {
-            font-size: 16px;
-            line-height: 1.8;
-            color: #4a3b32;
-            background: #fff;
-            border-left: 4px solid #e1b12c;
-            border-radius: 0 10px 10px 0;
-            padding: 16px 20px;
-            margin-bottom: 30px;
-        }
-
-        /* --- BOTONES REDES SOCIALES BIOGRAFÍA — cuadrados pastel --- */
+        /* --- BOTONES REDES EN BIOGRAFÍA --- */
         .bio-redes-titulo {
-            font-size: 13px;
-            font-weight: 700;
-            color: #a08060;
-            text-transform: uppercase;
+            font-size: 13px; font-weight: 700;
+            color: #a08060; text-transform: uppercase;
             letter-spacing: 1px;
-            margin: 28px 0 14px 0;
+            margin: 28px 0 14px;
             text-align: center;
         }
         .bio-redes-botones {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
+            display: flex; justify-content: center;
+            gap: 12px; flex-wrap: wrap; margin-bottom: 8px;
         }
         .btn-red-bio {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 80px;
-            height: 80px;
-            border-radius: 16px;
-            border: 2px solid transparent;
-            font-size: 11px;
-            font-weight: 700;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 6px; width: 80px; height: 80px;
+            border-radius: 16px; border: 2px solid transparent;
+            font-size: 11px; font-weight: 700;
             cursor: pointer;
             transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
             font-family: inherit;
         }
         .btn-red-bio:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
         .btn-red-bio.activo { border-color: rgba(0,0,0,0.18); box-shadow: 0 0 0 3px rgba(0,0,0,0.10); transform: translateY(-1px); }
-        /* Colores pastel que indican "contenido interno" */
         .btn-red-bio.yt  { background: #ffd6d6; color: #b03030; }
         .btn-red-bio.fb  { background: #d6e4ff; color: #2a4a8a; }
         .btn-red-bio.ig  { background: #ffe0f0; color: #a0307a; }
         .btn-red-bio svg { width: 22px; height: 22px; flex-shrink: 0; }
-
-        /* Texto dinámico de red activa */
         .bio-redes-texto-activo {
-            text-align: center;
-            font-size: 13px;
-            color: #8c7565;
-            font-style: italic;
-            margin: 8px 0 16px 0;
-            min-height: 18px;
+            text-align: center; font-size: 13px;
+            color: #8c7565; font-style: italic;
+            margin: 8px 0 16px; min-height: 18px;
         }
-
-        /* --- PANEL DE VIDEOS DE RED SOCIAL (biografía) --- */
         #panelVideosRedes {
-            display: block;
-            margin-top: 18px;
-            border-radius: 14px;
-            overflow: hidden;
-            background: #f9f6f2;
-            border: 1px solid #ede4d8;
+            display: block; margin-top: 18px;
+            border-radius: 14px; overflow: hidden;
+            background: #f9f6f2; border: 1px solid #ede4d8;
             padding: 16px;
         }
-        #contenedorVideosRedes {
-            min-height: 60px;
-        }
+        #contenedorVideosRedes { min-height: 60px; }
         @media (max-width: 500px) {
             .btn-red-bio span { display: none; }
             .btn-red-bio { width: 64px; height: 64px; }
             .bio-redes-botones { gap: 10px; }
+            .bio-bloque { padding: 24px 18px; }
         }
 
-        /* --- BOTÓN ZONA INTERACTIVA (2 renglones) --- */
-        .btn-seccion.dos-renglones {
-            line-height: 1.25;
-            padding-top: 10px;
-            padding-bottom: 10px;
+        /* --- GRID VIDEOS 3 COLUMNAS (música, proyectos, redes) --- */
+        .grid-videos-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 10px 0;
         }
+        @media (max-width: 700px) { .grid-videos-3 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 450px) { .grid-videos-3 { grid-template-columns: 1fr; } }
+
+        /* --- MODAL PRODUCTO --- */
+        #modalProducto {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #modalProducto.abierto { display: flex; }
+        .modal-caja {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h2 { margin: 0; font-size: 18px; color: #3d312a; }
+        .modal-cerrar {
+            background: none; border: none;
+            font-size: 24px; cursor: pointer;
+            color: #999; line-height: 1;
+        }
+        .modal-galeria-wrap { position: relative; background: #111; }
+        .modal-galeria-track {
+            display: flex;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .modal-galeria-slide { flex: 0 0 100%; }
+        .modal-galeria-slide img { width: 100%; max-height: 360px; object-fit: contain; }
+        .modal-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.85); border: none;
+            border-radius: 50%; width: 36px; height: 36px;
+            font-size: 18px; cursor: pointer;
+        }
+        #btnGalPrev { left: 8px; }
+        #btnGalNext { right: 8px; }
+        .oculto-nav { display: none; }
+        #modalDots {
+            display: flex; justify-content: center;
+            gap: 6px; padding: 8px;
+            background: #111;
+        }
+        .modal-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+        }
+        .modal-dot.activo { background: #fff; }
+        #modalContador {
+            position: absolute; bottom: 40px; right: 12px;
+            color: rgba(255,255,255,0.7); font-size: 12px;
+        }
+        .modal-body { padding: 20px; }
+        #modalDescripcionZona { margin-bottom: 16px; }
+        #modalDescripcionTexto { font-size: 15px; color: #4a3b32; line-height: 1.7; }
+        .modal-redes-botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .btn-red-modal {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 20px; border: none;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            color: #fff; font-family: inherit;
+        }
+        .btn-red-modal.yt { background: #FF0000; }
+        .btn-red-modal.fb { background: #1877F2; }
+        .btn-red-modal.ig { background: linear-gradient(45deg,#f09433,#dc2743,#bc1888); }
+        .btn-red-modal svg { width: 16px; height: 16px; }
+        #modalAditivosZona { margin-top: 16px; }
+        .modal-aditivos-titulo { font-size: 13px; font-weight: 700; color: #8c7565; margin-bottom: 10px; }
+        #modalAditivosScroll {
+            display: flex; gap: 8px;
+            overflow-x: auto; padding-bottom: 4px;
+        }
+        /* Zoom overlay */
+        #zoomOverlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #zoomOverlay.abierto { display: flex; }
+        #zoomImg { max-width: 92vw; max-height: 85vh; object-fit: contain; transition: opacity 0.2s; }
+        #zoomContador { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 10px; }
+        .zoom-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.15); border: none;
+            color: white; font-size: 28px;
+            width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+        }
+        #zoomPrev { left: 16px; }
+        #zoomNext { right: 16px; }
+        .oculto-zoom { display: none !important; }
+        #zoomCerrar {
+            position: absolute; top: 16px; right: 20px;
+            background: none; border: none;
+            color: white; font-size: 32px; cursor: pointer; line-height: 1;
+        }
+
+        /* --- MODO OSCURO --- */
+        .modo-oscuro { background: #1a1210; color: #e8d8c8; }
+        .modo-oscuro .bio-bloque { background: #2a1f1a; border-color: #3d2e28; }
+        .modo-oscuro .card-dinamica { background: #2a1f1a; }
+        .modo-oscuro .modal-caja { background: #2a1f1a; }
+        .modo-oscuro #panelVideosRedes { background: #2a1f1a; border-color: #3d2e28; }
+
+        /* --- FOOTER --- */
         footer {
             text-align: center;
             padding: 30px 20px;
-            background-color: #3d312a;
+            background: #3d312a;
             color: #f5f6fa;
             font-size: 14px;
         }
 
-        /* --- RESPONSIVE --- */
+        /* --- RESPONSIVE GENERAL --- */
         @media (max-width: 600px) {
             .banner-contenedor { height: 260px; }
             .capa-oscura-banner h1 { font-size: 28px; }
             .capa-oscura-banner p { font-size: 15px; }
-            .bio-bloque { padding: 24px 18px; }
-            .bio-bloque h2 { font-size: 22px; }
             .seccion-titulo { font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ═══ BANNER REAL ═══ -->
+    <!-- ═══ BANNER ═══ -->
     <div class="banner-contenedor">
         <img class="banner-img" src="imagenes/banner-elba.webp"
              alt="Elba Rodriguez Avalos"
@@ -348,27 +416,22 @@
 
     <!-- ═══ BANDA DE REDES SOCIALES ═══ -->
     <div class="banda-redes">
-
         <a class="red-social correo" href="mailto:contacto@maestraelba.com" aria-label="Correo">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
             <span>Correo</span>
         </a>
-
-        <a class="red-social yt" href="https://youtube.com" target="_blank" aria-label="YouTube">
+        <a class="red-social yt" href="https://youtube.com/@maestraelba" target="_blank" aria-label="YouTube">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
             <span>YouTube</span>
         </a>
-
         <a class="red-social fb" href="https://facebook.com" target="_blank" aria-label="Facebook">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             <span>Facebook</span>
         </a>
-
         <a class="red-social ig" href="https://instagram.com" target="_blank" aria-label="Instagram">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
             <span>Instagram</span>
         </a>
-
     </div>
 
     <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
@@ -376,23 +439,23 @@
 
         <h2 class="seccion-titulo">Elba Rodriguez Avalos</h2>
 
-        <!-- Botones de navegación de sección -->
-        <div class="botones-seccion">
-            <button class="btn-seccion activo" id="btn-biografia" onclick="mostrarSeccion('biografia')">Biografía</button>
-            <button class="btn-seccion" id="btn-musica"    onclick="mostrarSeccion('musica')">Música</button>
-            <button class="btn-seccion" id="btn-proyectos" onclick="mostrarSeccion('proyectos')">Proyectos</button>
-            <button class="btn-seccion dos-renglones" id="btn-mis-aventuras" onclick="mostrarSeccion('mis-aventuras')">Mis<br>Aventuras</button>
-        </div>
+        <!-- ── PILL NAV (4 botones de sección) ── -->
+        <nav class="pill-nav">
+            <button class="pill-btn" id="pillBiografia">Biografía</button>
+            <button class="pill-btn" id="pillMusica">Música</button>
+            <button class="pill-btn" id="pillProyectos">Proyectos</button>
+            <button class="pill-btn" id="pillAventuras">Mis Aventuras</button>
+        </nav>
 
-        <!-- ── ZONA BIOGRAFÍA ── -->
-        <div class="zona-contenido activa" id="zona-biografia">
+        <!-- ══ PANEL BIOGRAFÍA ══ -->
+        <div class="panel-pill" id="panelPillBiografia">
             <div class="bio-bloque">
                 <h2>Una Trayectoria Histórica</h2>
-                <p><strong>Cantautora, docente y pionera cultural.</strong> Desde 1985, acumulando ya cuatro décadas de trayectoria activa, Elba Rodriguez Avalós ha dedicado su vida enteramente a crear universos musicales para las infancias de Morelia y de todo el país, consolidando un proyecto artístico educativo de valor invaluable.</p>
-                <p>Marcó un hito histórico en los medios de comunicación locales al convertirse en la <strong>primera mujer locutora en la radio de Morelia</strong>, abriendo camino para las futuras generaciones de comunicadoras con su voz cercana y profesional.</p>
-                <p>Actualmente, bajo una activa colaboración institucional, realiza múltiples presentaciones mensuales llenando de canciones, anécdotas y sonrisas los patios escolares, teatros y centros culturales, demostrando que la música infantil de calidad sigue más viva que nunca.</p>
+                <p><strong>Cantautora, docente y pionera cultural.</strong> Desde 1985, acumulando ya cuatro décadas de trayectoria activa, Elba Rodriguez Avalós ha dedicado su vida enteramente a crear universos musicales para las infancias de Morelia y de todo el país.</p>
+                <p>Marcó un hito histórico en los medios de comunicación locales al convertirse en la <strong>primera mujer locutora en la radio de Morelia</strong>, abriendo camino para las futuras generaciones de comunicadoras.</p>
+                <p>Actualmente realiza múltiples presentaciones mensuales llenando de canciones, anécdotas y sonrisas los patios escolares, teatros y centros culturales.</p>
 
-                <!-- ── BOTONES DE REDES SOCIALES (muestran panel de videos) ── -->
+                <!-- Botones de redes sociales que muestran videos -->
                 <p class="bio-redes-titulo">Síguenos en redes</p>
                 <div class="bio-redes-botones">
                     <button class="btn-red-bio yt" id="btnRedBioYT">
@@ -409,97 +472,92 @@
                     </button>
                 </div>
 
-                <!-- Texto dinámico de red activa -->
                 <p id="textoRedActiva" class="bio-redes-texto-activo"></p>
 
-                <!-- ── PANEL DE VIDEOS POR RED SOCIAL ── -->
                 <div id="panelVideosRedes">
                     <div id="contenedorVideosRedes"></div>
                 </div>
-
             </div>
         </div>
 
-        <!-- ── ZONA MÚSICA ── -->
-        <div class="zona-contenido" id="zona-musica">
-
-            <div class="video-contenedor">
-                <iframe src="https://www.youtube.com/embed/PLACEHOLDER1?rel=0&modestbranding=1"
-                        title="Video de Elba Rodriguez Avalos"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen></iframe>
-            </div>
-            <div class="video-descripcion">
-                <em>— Descripción del video de arriba</em>
-                Aquí puedes añadir una descripción del primer video de Elba.
-            </div>
-
-            <div class="video-contenedor">
-                <iframe src="https://www.youtube.com/embed/PLACEHOLDER2?rel=0&modestbranding=1"
-                        title="Video de Elba Rodriguez Avalos 2"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen></iframe>
-            </div>
-            <div class="video-descripcion">
-                <em>— Descripción del video de arriba</em>
-                Aquí puedes añadir una descripción del segundo video de Elba.
-            </div>
-
+        <!-- ══ PANEL MÚSICA ══ -->
+        <div class="panel-pill" id="panelPillMusica">
+            <!-- El grid de videos se inyecta aquí por app.js con id="contenedorMusica" -->
         </div>
 
-        <!-- ── ZONA PROYECTOS ── -->
-        <div class="zona-contenido" id="zona-proyectos">
-            <div class="proyectos-intro">
-                Esta sección está lista para mostrar los proyectos, colaboraciones institucionales y apariciones en medios de Elba Rodriguez Avalos.
-            </div>
+        <!-- ══ PANEL PROYECTOS ══ -->
+        <div class="panel-pill" id="panelPillProyectos">
+            <!-- El grid de proyectos se inyecta aquí por app.js con id="contenedorProyectos" -->
         </div>
 
-        <!-- ── ZONA MIS AVENTURAS ── -->
-        <div class="zona-contenido" id="zona-mis-aventuras">
-            <div class="proyectos-intro" id="mis-aventuras-intro">
-                🎶 ¡Bienvenido a Mis Aventuras! Aquí podrás explorar los conciertos y presentaciones de Elba Rodríguez Avalós.
+        <!-- ══ ZONA CATÁLOGO (Mis Aventuras) ══ -->
+        <div id="zona-catalogo">
+            <div id="mis-aventuras-intro" style="font-size:16px; line-height:1.8; color:#4a3b32; background:#fff; border-left:4px solid #e1b12c; border-radius:0 10px 10px 0; padding:16px 20px; margin-bottom:30px;">
+                🎶 ¡Bienvenido a Mis Aventuras! Aquí podrás explorar los conciertos y presentaciones de Elba.
             </div>
             <div id="gridProductos" class="grid-productos"></div>
         </div>
 
+    </div><!-- /contenedor-principal -->
+
+    <!-- ═══ MODAL PRODUCTO ═══ -->
+    <div id="modalProducto">
+        <div class="modal-caja">
+            <div class="modal-header">
+                <h2 id="modalProdTitulo">Título</h2>
+                <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
+            </div>
+            <div class="modal-galeria-wrap">
+                <div id="modalGaleriaTrack" class="modal-galeria-track"></div>
+                <button class="modal-nav-btn" id="btnGalPrev" onclick="irASlide(galeriaIndice-1)">‹</button>
+                <button class="modal-nav-btn" id="btnGalNext" onclick="irASlide(galeriaIndice+1)">›</button>
+                <span id="modalContador"></span>
+                <div id="modalDots"></div>
+            </div>
+            <div class="modal-body">
+                <div id="modalPrecioSuperior" style="display:none"></div>
+                <div id="mpPrecioFilaCompleta" style="display:none">
+                    <span id="mpPrecioOriginalFila"></span>
+                    <span id="mpPrecioBazarFila"></span>
+                </div>
+                <div id="modalDescripcionZona">
+                    <p id="modalDescripcionTexto"></p>
+                </div>
+                <div class="modal-redes-botones">
+                    <button class="btn-red-modal yt" id="btnRedYT" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        Ver en YouTube
+                    </button>
+                    <button class="btn-red-modal fb" id="btnRedFB" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        Ver en Facebook
+                    </button>
+                    <button class="btn-red-modal ig" id="btnRedIG" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                        Ver en Instagram
+                    </button>
+                </div>
+                <div id="modalAditivosZona" style="display:none">
+                    <p class="modal-aditivos-titulo">📸 Galería</p>
+                    <div id="modalAditivosScroll"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ZOOM LIGHTBOX ═══ -->
+    <div id="zoomOverlay">
+        <button id="zoomCerrar" onclick="cerrarZoomGaleria()">✕</button>
+        <img id="zoomImg" src="" alt="Zoom">
+        <button class="zoom-nav" id="zoomPrev" onclick="zoomNavegar(-1)">‹</button>
+        <button class="zoom-nav" id="zoomNext" onclick="zoomNavegar(1)">›</button>
+        <div id="zoomContador"></div>
     </div>
 
     <footer>
         <p>&copy; 2026 Elba Rodriguez Avalós — Diseñado con orgullo por Yesos Polo Digital</p>
     </footer>
 
-    <script>
-        function mostrarSeccion(cual) {
-            document.querySelectorAll('.zona-contenido').forEach(z => z.classList.remove('activa'));
-            document.querySelectorAll('.btn-seccion').forEach(b => b.classList.remove('activo'));
-
-            var zonaId = 'zona-' + cual;
-            var zonaEl = document.getElementById(zonaId);
-            if (zonaEl) zonaEl.classList.add('activa');
-
-            var btnEl = document.getElementById('btn-' + cual);
-            if (btnEl) btnEl.classList.add('activo');
-
-            // Si salimos de biografía, cerrar el panel de videos de redes
-            if (cual !== 'biografia') {
-                if (typeof detenerTodosLosVideos === 'function') detenerTodosLosVideos();
-            }
-
-            // Si entramos a Mis Aventuras, renderizar el catálogo si ya está cargado
-            if (cual === 'mis-aventuras') {
-                if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
-                    var intro = document.getElementById('mis-aventuras-intro');
-                    if (intro) intro.style.display = 'none';
-                    if (typeof renderizarCatalogoCompleto === 'function') renderizarCatalogoCompleto();
-                }
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Biografía activa por defecto
-            mostrarSeccion('biografia');
-        });
-    </script>
-
+    <script src="app.js"></script>
 </body>
 </html>
