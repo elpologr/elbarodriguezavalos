@@ -62,6 +62,14 @@ function parsearCSV(texto) {
     return lineas;
 }
 
+// ── Normaliza texto: minúsculas, sin tildes ──
+function _normalizar(str) {
+    return (str || '').toLowerCase()
+        .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+        .replace(/ó/g,'o').replace(/ú/g,'u').replace(/ü/g,'u')
+        .trim();
+}
+
 // ── Convierte filas CSV en objetos ──
 function csvAProductos(filas) {
     if (filas.length < 2) return [];
@@ -72,35 +80,63 @@ function csvAProductos(filas) {
         
         if (!get(0)) continue; // Saltar filas vacías
 
-        // Col B puede ser imagen o URL de YouTube
+        // Col B puede contener una URL de YouTube, una imagen, o varias imágenes separadas por coma
         var colB = get(1);
-        var esYouTube = colB.includes('youtube.com') || colB.includes('youtu.be');
-
-        // Imágenes adicionales en col F (separadas por coma), solo si parecen URLs de imagen
-        var enlacesRaw = get(5);
-        var galeria = enlacesRaw ? enlacesRaw.split(',').map(function(u){ return u.trim(); }).filter(function(u) {
-            return u.startsWith('http') || u.startsWith('/');
-        }) : [];
         
-        var imgPrincipal = esYouTube ? '' : colB;
-        var videoYT = esYouTube ? colB : '';
-        var todasImagenes = imgPrincipal ? [imgPrincipal].concat(galeria) : galeria;
+        // Separar posibles múltiples URLs en col B
+        var urlsColB = colB.split(',').map(function(u){ return u.trim(); }).filter(Boolean);
+        
+        // Detectar si alguna URL en col B es YouTube
+        var videoYT = '';
+        var imagenesColB = [];
+        urlsColB.forEach(function(u) {
+            if (u.includes('youtube.com') || u.includes('youtu.be')) {
+                if (!videoYT) videoYT = u; // primer video YouTube encontrado
+            } else if (u.startsWith('http') || u.startsWith('/')) {
+                imagenesColB.push(u);
+            }
+        });
+
+        // Col F: puede tener URLs extra de imágenes (en algunas filas) o texto como 'youtube'
+        var colF = get(5);
+        var galeriaExtra = [];
+        if (colF && (colF.startsWith('http') || colF.startsWith('/'))) {
+            galeriaExtra = colF.split(',').map(function(u){ return u.trim(); }).filter(function(u){
+                return u.startsWith('http') || u.startsWith('/');
+            });
+        }
+        // enlace = col F como texto (para detectar 'youtube'/'facebook'/'instagram' en redes)
+        var enlaceTexto = (colF.startsWith('http') || colF.startsWith('/')) ? '' : colF;
+
+        var todasImagenes = imagenesColB.concat(galeriaExtra);
+        var imgPrincipal = todasImagenes[0] || '';
+
+        // Categoría normalizada (sin tildes) para comparaciones
+        var categoriaBruta = get(4);
+        var categoriaNorm = _normalizar(categoriaBruta);
 
         productos.push({
             id:             i,
             nombre:         get(0),
             descripcion:    get(2),
             fecha:          get(3),
-            categoria:      get(4),   // SECCIÓN: 'musica', 'aventura', 'proyecto', 'biografia'
-            enlace:         get(5),   // Para biografía: 'youtube', 'facebook', 'instagram'
-            seccion:        get(6),   // Nombre del álbum/subsección (p.ej. "A Viajar se ha Dicho")
-            imagen:         imgPrincipal || (todasImagenes[0] || ''),
+            categoria:      categoriaBruta,      // valor original del Sheet
+            categoriaNorm:  categoriaNorm,        // normalizado para filtros
+            enlace:         enlaceTexto,          // 'youtube'/'facebook'/'instagram' o vacío
+            seccion:        get(6),               // nombre del álbum / subsección
+            imagen:         imgPrincipal,
             imagenes:       todasImagenes,
             videoYoutube:   videoYT,
             videoFacebook:  '',
             videoInstagram: ''
         });
     }
+    console.log('[Elba] Productos cargados:', productos.length,
+        '| musica:', productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
+        '| biografia:', productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
+        '| aventura:', productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
+        '| youtube:', productos.filter(function(p){ return p.categoriaNorm === 'youtube'; }).length
+    );
     return productos;
 }
 
@@ -132,9 +168,9 @@ function renderizarCatalogoCompleto() {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // Filtrar por columna 'categoria' = 'aventura'
+    // Filtrar por columna 'categoria' normalizada = 'aventura'
     var items = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase().includes('aventura');
+        return p.categoriaNorm === 'aventura';
     });
 
     // ORDENAR POR FECHA — más reciente primero
@@ -245,9 +281,9 @@ function renderizarSeccionMusica() {
     contenedorMusica.innerHTML = '';
     contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar por columna 'categoria' = 'musica'
+    // Filtrar por columna 'categoria' normalizada = 'musica'
     var musicaItems = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase().includes('musica');
+        return p.categoriaNorm === 'musica';
     });
 
     // Ordenar: más reciente primero
@@ -326,9 +362,9 @@ function renderizarSeccionProyectos() {
     cont.innerHTML = '';
     cont.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar por columna 'categoria' = 'proyecto'
+    // Filtrar por columna 'categoria' normalizada = 'proyecto'
     var items = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase().includes('proyecto');
+        return p.categoriaNorm === 'proyecto';
     });
 
     items.sort(function(a, b) {
@@ -691,10 +727,15 @@ function mostrarVideosDeRed(red, contenedor) {
         textoInfo.textContent = 'Estás viendo las publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' de Elba Rodríguez';
     }
 
-    // Filtrar: categoria='biografia' Y enlace='youtube'/'facebook'/'instagram'
+    // Filtrar: categoria normalizada = 'biografia' Y enlace = 'youtube'/'facebook'/'instagram'
+    // O bien: categoria normalizada = 'youtube'/'facebook'/'instagram' directamente
+    var redNorm = _normalizar(red);
     var videos = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase().includes('biografia') &&
-               p.enlace && p.enlace.toLowerCase() === red.toLowerCase();
+        // Caso 1: categoria='biografia' y enlace='youtube' (estructura actual del Sheet)
+        if (p.categoriaNorm === 'biografia' && _normalizar(p.enlace) === redNorm) return true;
+        // Caso 2: categoria='youtube'/'facebook'/'instagram' directamente
+        if (p.categoriaNorm === redNorm) return true;
+        return false;
     });
 
     if (videos.length === 0) {
