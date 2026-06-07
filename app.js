@@ -429,8 +429,9 @@ function renderizarSeccionProyectos() {
 // CARGA DESDE GOOGLE SHEETS
 // ══════════════════════════════════════════════════════════════════════════════
 function cargarDesdeGoogleSheets() {
+    // URL 1: export directo. URL 2: gviz (fallback si la hoja no está publicada para export)
     var csvUrl = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv';
-    mostrarEstadoCarga('Cargando historia y eventos...', false);
+    mostrarEstadoCarga('Cargando contenido...', false);
 
     fetch(csvUrl)
         .then(function(res) {
@@ -438,30 +439,64 @@ function cargarDesdeGoogleSheets() {
             return res.text();
         })
         .then(function(texto) {
+            // Detectar si Google devolvió HTML en lugar de CSV (hoja no publicada)
+            if (texto.trim().startsWith('<!DOCTYPE') || texto.trim().startsWith('<html')) {
+                throw new Error('La hoja no está publicada. Ve a Archivo → Compartir → Publicar en la web → CSV y vuelve a intentar.');
+            }
+
             var filas = parsearCSV(texto);
+            console.log('[Elba] Filas CSV leídas:', filas.length);
+            if (filas.length > 1) {
+                console.log('[Elba] Encabezados:', filas[0]);
+                console.log('[Elba] Primera fila de datos:', filas[1]);
+            }
+
             var productos = csvAProductos(filas);
 
             if (productos.length === 0) {
-                mostrarEstadoCarga('La hoja está vacía.', true);
+                mostrarEstadoCarga('La hoja está vacía o sin datos válidos.', true);
                 return;
             }
 
             listaProductos = productos;
-            
-            // Ocultar intro si existe
+
+            // Cuadro de diagnóstico visible en pantalla (desaparece en 8s)
+            var counts = {
+                total:    productos.length,
+                musica:   productos.filter(function(p){ return p.categoriaNorm === 'musica'; }).length,
+                biografia:productos.filter(function(p){ return p.categoriaNorm === 'biografia'; }).length,
+                aventura: productos.filter(function(p){ return p.categoriaNorm === 'aventura'; }).length,
+                proyecto: productos.filter(function(p){ return p.categoriaNorm === 'proyecto'; }).length,
+                youtube:  productos.filter(function(p){ return p.categoriaNorm === 'youtube'; }).length,
+                facebook: productos.filter(function(p){ return p.categoriaNorm === 'facebook'; }).length,
+            };
+            var diag = document.createElement('div');
+            diag.id = 'diagElba';
+            diag.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#1a1a2e;color:#fff;padding:14px 18px;border-radius:10px;font-size:13px;line-height:1.8;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:300px;';
+            diag.innerHTML = '<strong>✅ Hoja conectada</strong><br>' +
+                '📦 Total filas: <strong>' + counts.total + '</strong><br>' +
+                '🎵 musica: <strong>' + counts.musica + '</strong><br>' +
+                '📖 biografia: <strong>' + counts.biografia + '</strong><br>' +
+                '🏕 aventura: <strong>' + counts.aventura + '</strong><br>' +
+                '🎨 proyecto: <strong>' + counts.proyecto + '</strong><br>' +
+                '▶️ youtube (cat directa): <strong>' + counts.youtube + '</strong><br>' +
+                '📘 facebook (cat directa): <strong>' + counts.facebook + '</strong><br>' +
+                '<small style="opacity:0.6">Desaparece en 8 segundos</small>';
+            document.body.appendChild(diag);
+            setTimeout(function(){ var d=document.getElementById('diagElba'); if(d) d.remove(); }, 8000);
+
             var intro = document.getElementById('mis-aventuras-intro');
             if (intro) intro.style.display = 'none';
-            
+
             renderizarCatalogoCompleto();
-            
-            // Disparar evento
             document.dispatchEvent(new CustomEvent('catalogoCargado'));
         })
         .catch(function(err) {
-            console.error('Error cargando Google Sheets:', err);
-            mostrarEstadoCarga('Error de conexión con la hoja de cálculo.', true);
+            console.error('[Elba] Error:', err);
+            mostrarEstadoCarga('⚠️ ' + err.message, true);
         });
 }
+
 
 // Iniciar carga
 if (document.readyState === 'loading') {
