@@ -64,12 +64,25 @@ function filtrarVideosRed(red) {
     detenerTodosLosVideos();
     _resetBotonesRed();
 
-    // Marcar botón activo con borde más fuerte
+    // Marcar botón activo
     var ids = { youtube:'btnRedYT', facebook:'btnRedFB', instagram:'btnRedIG', tiktok:'btnRedTT' };
     var btn = document.getElementById(ids[red]);
-    if (btn) btn.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.18)';
+    if (btn) btn.classList.add('activo');
 
-    var videos = (_videosRedes[red] || []).slice(0, 6);
+    // Recopilar links de todos los eventos cargados para la red seleccionada
+    var campoRed = { youtube:'videoYoutube', facebook:'videoFacebook', instagram:'videoInstagram', tiktok:'videoTiktok' };
+    var campo = campoRed[red];
+    var videosDelSheet = [];
+    if (campo && typeof listaProductos !== 'undefined') {
+        listaProductos.forEach(function(p) {
+            if (p[campo]) {
+                videosDelSheet.push({ tipo: red, url: p[campo], titulo: p.nombre });
+            }
+        });
+    }
+
+    // Combinar con los videos hardcodeados en _videosRedes (si los hay)
+    var videos = (_videosRedes[red] || []).concat(videosDelSheet).slice(0, 6);
     var grid = document.getElementById('gridVideosRedes');
     grid.innerHTML = '';
 
@@ -81,23 +94,24 @@ function filtrarVideosRed(red) {
             celda.style.cssText = 'border-radius:10px; overflow:hidden; background:#111; position:relative; aspect-ratio:16/9;';
 
             if (v.tipo === 'youtube') {
-                // Thumbnail clicable → carga iframe solo al hacer clic
+                var ytMatch = (v.url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
+                var ytId = ytMatch ? ytMatch[1] : (v.id || '');
                 celda.innerHTML =
-                    '<div class="video-thumb-wrap" data-videoidx="' + i + '" style="width:100%;height:100%;cursor:pointer;position:relative;" onclick="cargarVideoInline(this,' + JSON.stringify(v).replace(/"/g,'&quot;') + ')">' +
-                    '<img src="https://img.youtube.com/vi/' + v.id + '/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy">' +
+                    '<div class="video-thumb-wrap" data-videoidx="' + i + '" style="width:100%;height:100%;cursor:pointer;position:relative;" onclick="cargarVideoInline(this,' + JSON.stringify({tipo:'youtube', id:ytId, titulo:v.titulo}).replace(/"/g,'&quot;') + ')">' +
+                    '<img src="https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy">' +
                     '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.28);">' +
                     '<div style="width:52px;height:52px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;">' +
                     '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div></div>' +
                     (v.titulo ? '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));color:white;font-size:0.7rem;padding:14px 8px 6px;font-weight:600;">' + v.titulo + '</div>' : '') +
                     '</div>';
             } else {
-                // Facebook / Instagram / TikTok — placeholder con botón abrir en nueva pestaña
+                // Facebook / Instagram / TikTok — botón para abrir en nueva pestaña
                 celda.style.cssText += 'display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1a2e;';
-                var iconos = { facebook:'🎬', instagram:'🎞️', tiktok:'🎵' };
+                var iconos = { facebook:'📘', instagram:'📸', tiktok:'🎵' };
                 celda.innerHTML =
                     '<div style="font-size:2rem;margin-bottom:8px;">' + (iconos[v.tipo]||'▶️') + '</div>' +
                     '<div style="color:#ccc;font-size:0.75rem;text-align:center;padding:0 8px;margin-bottom:10px;">' + (v.titulo || 'Ver video') + '</div>' +
-                    '<a href="' + v.url + '" target="_blank" style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;padding:7px 16px;font-size:0.78rem;font-weight:700;text-decoration:none;font-family:inherit;">Ver video ↗</a>';
+                    '<a href="' + (v.url||'#') + '" target="_blank" style="background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;padding:7px 16px;font-size:0.78rem;font-weight:700;text-decoration:none;font-family:inherit;">Ver video ↗</a>';
             }
             grid.appendChild(celda);
         });
@@ -151,7 +165,7 @@ function detenerTodosLosVideos() {
 function _resetBotonesRed() {
     ['btnRedYT','btnRedFB','btnRedIG','btnRedTT'].forEach(function(id){
         var b = document.getElementById(id);
-        if (b) b.style.boxShadow = 'none';
+        if (b) b.classList.remove('activo');
     });
 }
 
