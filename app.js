@@ -18,17 +18,16 @@ function _ready(fn) {
 var SHEET_ID = '1syFSE4GiAfmvEslC038srzJyqJGMJ9AEpbUdnNgBtyE'; // Tu ID actual
 var listaProductos = [];
 
-// COLUMNAS ESPERADAS (Nueva Estructura):
+// COLUMNAS ESPERADAS (Estructura actualizada):
 // A: Nombre
 // B: imagen
-// C: Descripcion
-// D: fecha
-// E: categoria (Usada para filtrar: 'Biografia', 'Musica', 'Proyectos', 'Mis Aventuras')
-// F: enlace (URLs de imágenes/videos extra separados por comas)
+// C: Descripcion  ← Usada para clasificar sección: 'aventura', 'proyecto', 'música', 'red'
+// D: fecha        ← Ordenamiento (más reciente primero)
+// E: categoria    ← Para Música: nombre del disco/álbum. Para Redes: 'youtube', 'facebook', 'instagram'
+// F: enlace       (URLs de imágenes/videos extra separados por comas)
 // G: videoyoutube
 // H: videofacebook
 // I: videoinstagram
-// J: videotiktok
 
 // ── Parser de CSV ──
 function parsearCSV(texto) {
@@ -93,8 +92,7 @@ function csvAProductos(filas) {
             imagenes:       todasImagenes,
             videoYoutube:   get(6),
             videoFacebook:  get(7),
-            videoInstagram: get(8),
-            videoTiktok:    get(9)
+            videoInstagram: get(8)
         });
     }
     return productos;
@@ -121,23 +119,26 @@ function renderizarCatalogoCompleto() {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // Filtrar solo los de categoría "Mis Aventuras" o similares si quieres separarlos
-    // Por ahora mostramos todos los que no sean música/proyectos/biografia explícita si así lo deseas,
-    // o simplemente todos ordenados por fecha.
-    
-    // ORDENAR POR FECHA (Más antigua a más reciente)
-    listaProductos.sort(function(a, b) {
+    // Filtrar solo los que en la columna Descripción diga 'aventura'
+    var items = listaProductos.filter(function(p) {
+        return p.descripcion && p.descripcion.toLowerCase().includes('aventura');
+    });
+
+    // ORDENAR POR FECHA — más reciente primero
+    items.sort(function(a, b) {
         var dateA = new Date(a.fecha);
         var dateB = new Date(b.fecha);
         if (isNaN(dateA.getTime())) return 1;
         if (isNaN(dateB.getTime())) return -1;
-        return dateA - dateB;
+        return dateB - dateA;
     });
 
-    listaProductos.forEach(function(p) {
-        // Si quieres que SOLO aparezcan en "Mis Aventuras" los que tengan esa categoría exacta:
-        // if (p.categoria.toLowerCase() !== 'mis aventuras') return; 
+    if (items.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:#8c7565;"><div style="font-size:2rem; margin-bottom:12px;">🌟</div><p style="font-size:1rem; font-weight:600;">Próximamente compartiremos nuevas aventuras.</p></div>';
+        return;
+    }
 
+    items.forEach(function(p) {
         var card = document.createElement('div');
         card.className = 'card-dinamica';
         
@@ -151,7 +152,6 @@ function renderizarCatalogoCompleto() {
         card.setAttribute('data-video-youtube', p.videoYoutube || '');
         card.setAttribute('data-video-facebook', p.videoFacebook || '');
         card.setAttribute('data-video-instagram', p.videoInstagram || '');
-        card.setAttribute('data-video-tiktok', p.videoTiktok || '');
         
         card.style.cursor = 'pointer';
 
@@ -217,33 +217,36 @@ function renderizarCatalogoCompleto() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// RENDERIZADO SECCIÓN MÚSICA (GRID ESPECIAL)
+// RENDERIZADO SECCIÓN MÚSICA (GRID DE 3 COLUMNAS CON ÁLBUM)
 // ══════════════════════════════════════════════════════════════════════════════
 function renderizarSeccionMusica() {
-    // Buscamos un contenedor específico para música, o reutilizamos el grid principal
-    // Para este ejemplo, asumiremos que hay un div con id "gridMusica" en el panel de música.
-    // Si no existe, lo creamos dinámicamente en el panel correspondiente.
-    
     var panelMusica = document.getElementById('panelPillMusica');
     if (!panelMusica) return;
 
-    // Limpiar contenido previo de música si existe
     var contenedorMusica = document.getElementById('contenedorMusica');
     if (!contenedorMusica) {
         contenedorMusica = document.createElement('div');
         contenedorMusica.id = 'contenedorMusica';
-        contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px; padding:20px;';
         panelMusica.appendChild(contenedorMusica);
     }
     contenedorMusica.innerHTML = '';
+    contenedorMusica.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
 
-    // Filtrar productos de categoría "Musica"
+    // Filtrar por columna Descripción que contenga 'música'
     var musicaItems = listaProductos.filter(function(p) {
-        return p.categoria && p.categoria.toLowerCase().includes('musica');
+        return p.descripcion && p.descripcion.toLowerCase().includes('música');
+    });
+
+    // Ordenar: más reciente primero
+    musicaItems.sort(function(a, b) {
+        var dA = new Date(a.fecha), dB = new Date(b.fecha);
+        if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
+        return dB - dA;
     });
 
     if (musicaItems.length === 0) {
-        contenedorMusica.innerHTML = '<p style="text-align:center; width:100%; color:#888;">Próximamente agregaremos contenido musical.</p>';
+        contenedorMusica.style.display = 'block';
+        contenedorMusica.innerHTML = '<p style="text-align:center; width:100%; color:#888; padding:40px 0;">Próximamente agregaremos contenido musical.</p>';
         return;
     }
 
@@ -252,54 +255,137 @@ function renderizarSeccionMusica() {
         card.className = 'card-musica';
         card.style.cssText = 'background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s;';
         card.onmouseover = function() { this.style.transform = 'translateY(-5px)'; };
-        card.onmouseout = function() { this.style.transform = 'translateY(0)'; };
+        card.onmouseout  = function() { this.style.transform = 'translateY(0)'; };
 
-        // Imagen
+        // Imagen con icono de play
         var imgDiv = document.createElement('div');
-        imgDiv.style.cssText = 'height:200px; background:#eee; position:relative;';
-        imgDiv.innerHTML = '<img src="'+p.imagen+'" style="width:100%; height:100%; object-fit:cover;">';
-        
-        // Icono de Play superpuesto
+        imgDiv.style.cssText = 'height:160px; background:#eee; position:relative;';
+        imgDiv.innerHTML = '<img src="' + p.imagen + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; this.parentElement.style.background=\'#d9cfc8\'">';
         var playIcon = document.createElement('div');
-        playIcon.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:50px; height:50px; background:rgba(255,255,255,0.8); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; color:#8c7565;';
+        playIcon.style.cssText = 'position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:44px; height:44px; background:rgba(255,255,255,0.85); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; color:#8c7565;';
         playIcon.innerHTML = '▶';
         imgDiv.appendChild(playIcon);
-
         card.appendChild(imgDiv);
 
-        // Info
+        // Info: nombre + álbum (columna Categoría)
         var infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'padding:15px;';
-        infoDiv.innerHTML = '<h3 style="margin:0 0 5px; font-size:18px; color:#362a22;">'+p.nombre+'</h3>' +
-                            '<p style="margin:0; font-size:14px; color:#705c4f; line-height:1.4;">'+(p.descripcion ? p.descripcion.substring(0, 60)+'...' : '')+'</p>';
-        
+        infoDiv.style.cssText = 'padding:12px 14px;';
+        var h3 = document.createElement('h3');
+        h3.style.cssText = 'margin:0 0 4px; font-size:15px; color:#362a22; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+        h3.textContent = p.nombre;
+        infoDiv.appendChild(h3);
+
+        // Álbum o disco (columna Categoría)
+        if (p.categoria) {
+            var albumP = document.createElement('p');
+            albumP.style.cssText = 'margin:0; font-size:12px; color:#8c7565; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+            albumP.innerHTML = '💿 ' + p.categoria;
+            infoDiv.appendChild(albumP);
+        }
+
         card.appendChild(infoDiv);
 
-        // Click para abrir modal
+        // Click: abrir modal
         card.addEventListener('click', function() {
-            // Creamos un elemento temporal tipo "card-dinamica" para usar la función existente del modal
             var tempCard = document.createElement('div');
             tempCard.setAttribute('data-nombre', p.nombre);
             tempCard.setAttribute('data-descripcion', p.descripcion);
             tempCard.setAttribute('data-imagenes', JSON.stringify(p.imagenes));
-            tempCard.setAttribute('data-video-youtube', p.videoYoutube);
-            tempCard.setAttribute('data-video-facebook', p.videoFacebook);
-            tempCard.setAttribute('data-video-instagram', p.videoInstagram);
-            tempCard.setAttribute('data-video-tiktok', p.videoTiktok);
-            
-            // Truco: añadimos una imagen fake al tempCard para que el modal la encuentre si no hay galería
+            tempCard.setAttribute('data-video-youtube', p.videoYoutube || '');
+            tempCard.setAttribute('data-video-facebook', p.videoFacebook || '');
+            tempCard.setAttribute('data-video-instagram', p.videoInstagram || '');
             var fakeImgContainer = document.createElement('div');
             fakeImgContainer.className = 'img-contenedor-dinamico';
             var fakeImg = document.createElement('img');
             fakeImg.src = p.imagen;
             fakeImgContainer.appendChild(fakeImg);
             tempCard.appendChild(fakeImgContainer);
-
             abrirModalProducto(tempCard);
         });
 
         contenedorMusica.appendChild(card);
     });
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDERIZADO SECCIÓN PROYECTOS (GRID DE 3 + MODAL)
+// ══════════════════════════════════════════════════════════════════════════════
+function renderizarSeccionProyectos() {
+    var panelProyectos = document.getElementById('panelPillProyectos');
+    if (!panelProyectos) return;
+
+    var cont = document.getElementById('contenedorProyectos');
+    if (!cont) {
+        cont = document.createElement('div');
+        cont.id = 'contenedorProyectos';
+        panelProyectos.appendChild(cont);
+    }
+    cont.innerHTML = '';
+    cont.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; padding:20px;';
+
+    var items = listaProductos.filter(function(p) {
+        return p.descripcion && p.descripcion.toLowerCase().includes('proyecto');
+    });
+
+    items.sort(function(a, b) {
+        var dA = new Date(a.fecha), dB = new Date(b.fecha);
+        if (isNaN(dA)) return 1; if (isNaN(dB)) return -1;
+        return dB - dA;
+    });
+
+    if (items.length === 0) {
+        cont.style.display = 'block';
+        cont.innerHTML = '<p style="text-align:center; color:#888; padding:40px 0;">Próximamente compartiremos nuevos proyectos.</p>';
+        return;
+    }
+
+    items.forEach(function(p) {
+        var card = document.createElement('div');
+        card.className = 'card-dinamica';
+        card.setAttribute('data-idx', String(p.id));
+        card.setAttribute('data-nombre', p.nombre);
+        card.setAttribute('data-imagenes', JSON.stringify(p.imagenes || []));
+        card.setAttribute('data-descripcion', p.descripcion || '');
+        card.setAttribute('data-categoria', p.categoria || '');
+        card.setAttribute('data-fecha', p.fecha || '');
+        card.setAttribute('data-video-youtube', p.videoYoutube || '');
+        card.setAttribute('data-video-facebook', p.videoFacebook || '');
+        card.setAttribute('data-video-instagram', p.videoInstagram || '');
+        card.style.cursor = 'pointer';
+
+        var imgCont = document.createElement('div');
+        imgCont.className = 'img-contenedor-dinamico';
+        var img = document.createElement('img');
+        img.src = p.imagen; img.alt = p.nombre;
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+        img.onerror = function() { this.style.display='none'; this.parentElement.style.background='#eee'; };
+        imgCont.appendChild(img);
+        card.appendChild(imgCont);
+
+        var infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'margin-top:10px; flex-grow:1; padding:0 5px;';
+        var h3 = document.createElement('h3');
+        h3.style.cssText = 'font-size:15px; margin:5px 0; font-weight:700; color:#362a22;';
+        h3.textContent = p.nombre;
+        infoDiv.appendChild(h3);
+        if (p.fecha) {
+            var fechaP = document.createElement('p');
+            fechaP.style.cssText = 'font-size:12px; color:#8c7565; margin:2px 0;';
+            fechaP.textContent = '📅 ' + p.fecha;
+            infoDiv.appendChild(fechaP);
+        }
+        card.appendChild(infoDiv);
+
+        card.addEventListener('click', function(e) {
+            if (e.target.closest && e.target.closest('.btn-like')) return;
+            abrirModalProducto(card);
+        });
+
+        cont.appendChild(card);
+    });
+
+    if (typeof syncBotonesLike === 'function') syncBotonesLike();
 }
 
 
@@ -363,7 +449,6 @@ function abrirModalProducto(card) {
     const videoYT  = card.getAttribute('data-video-youtube') || '';
     const videoFB  = card.getAttribute('data-video-facebook') || '';
     const videoIG  = card.getAttribute('data-video-instagram') || '';
-    const videoTT  = card.getAttribute('data-video-tiktok') || '';
 
     try {
         galeriaImagenes = imagenesJSON ? JSON.parse(imagenesJSON) : [];
@@ -425,7 +510,7 @@ function abrirModalProducto(card) {
     }
 
     // Botones de Redes Sociales EN EL MODAL
-    _actualizarBotonesRedModal(videoYT, videoFB, videoIG, videoTT);
+    _actualizarBotonesRedModal(videoYT, videoFB, videoIG);
 
     // Abrir modal
     _actualizarGaleriaModal();
@@ -433,9 +518,9 @@ function abrirModalProducto(card) {
     document.body.style.overflow = 'hidden';
 }
 
-function _actualizarBotonesRedModal(yt, fb, ig, tt) {
-    var ids = { youtube: 'btnRedYT', facebook: 'btnRedFB', instagram: 'btnRedIG', tiktok: 'btnRedTT' };
-    var links = { youtube: yt, facebook: fb, instagram: ig, tiktok: tt };
+function _actualizarBotonesRedModal(yt, fb, ig) {
+    var ids = { youtube: 'btnRedYT', facebook: 'btnRedFB', instagram: 'btnRedIG' };
+    var links = { youtube: yt, facebook: fb, instagram: ig };
     
     Object.keys(ids).forEach(function(red) {
         var btn = document.getElementById(ids[red]);
@@ -569,74 +654,84 @@ document.getElementById('modalProducto').addEventListener('click', function(e) {
 // ══════════════════════════════════════════════════════════════════════════════
 // BOTONES DE REDES SOCIALES EN BIOGRAFÍA
 // ══════════════════════════════════════════════════════════════════════════════
+var _NOMBRES_REDES = { youtube: 'YouTube', facebook: 'Facebook', instagram: 'Instagram' };
+
 function initBotonesRedesBiografia() {
     var btns = {
-        youtube: document.getElementById('btnRedBioYT'), 
-        facebook: document.getElementById('btnRedBioFB'),
-        instagram: document.getElementById('btnRedBioIG'),
-        tiktok: document.getElementById('btnRedBioTT')
+        youtube:   document.getElementById('btnRedBioYT'), 
+        facebook:  document.getElementById('btnRedBioFB'),
+        instagram: document.getElementById('btnRedBioIG')
     };
     
-    var contenedor = document.getElementById('contenedorVideosRedes'); 
-
-    if (!contenedor) return; 
+    var contenedor = document.getElementById('contenedorVideosRedes');
+    if (!contenedor) return;
 
     Object.keys(btns).forEach(function(red) {
         if (btns[red]) {
             btns[red].addEventListener('click', function() {
-                Object.values(btns).forEach(b => b.classList.remove('activo'));
+                Object.values(btns).forEach(function(b) { if (b) b.classList.remove('activo'); });
                 btns[red].classList.add('activo');
                 mostrarVideosDeRed(red, contenedor);
             });
         }
     });
+
+    // YouTube seleccionado y desplegado por defecto
+    if (btns.youtube) btns.youtube.classList.add('activo');
+    mostrarVideosDeRed('youtube', contenedor);
 }
 
 function mostrarVideosDeRed(red, contenedor) {
-    contenedor.innerHTML = '<p style="text-align:center; padding:20px;">Cargando videos...</p>';
+    contenedor.innerHTML = '<p style="text-align:center; padding:20px;">Cargando publicaciones...</p>';
     contenedor.style.display = 'block';
 
+    // Texto dinámico
+    var textoInfo = document.getElementById('textoRedActiva');
+    if (textoInfo) {
+        textoInfo.textContent = 'Estás viendo las publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' de Elba Rodríguez';
+    }
+
+    // Filtrar por columna Categoría (no por campo de video) para redes
     var videos = listaProductos.filter(function(p) {
-        var link = '';
-        if (red === 'youtube') link = p.videoYoutube;
-        if (red === 'facebook') link = p.videoFacebook;
-        if (red === 'instagram') link = p.videoInstagram;
-        if (red === 'tiktok') link = p.videoTiktok;
-        return link && link.length > 5;
+        return p.categoria && p.categoria.toLowerCase() === red.toLowerCase();
     });
 
     if (videos.length === 0) {
-        contenedor.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">No hay videos de ' + red + ' registrados aún.</p>';
+        contenedor.innerHTML = '<p style="text-align:center; padding:30px 20px; color:#888; font-size:0.95rem;">No hay publicaciones de ' + (_NOMBRES_REDES[red] || red) + ' registradas aún.</p>';
         return;
     }
 
     var grid = document.createElement('div');
-    grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px; padding:20px 0;';
+    grid.style.cssText = 'display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; padding:16px 0;';
     
     videos.forEach(function(v) {
         var card = document.createElement('div');
-        card.style.cssText = 'background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1); cursor:pointer;';
-        
+        card.style.cssText = 'background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; transition:transform 0.2s;';
+        card.onmouseover = function() { this.style.transform='translateY(-3px)'; };
+        card.onmouseout  = function() { this.style.transform='translateY(0)'; };
+
+        // Determinar link de video según red
         var link = '';
-        if (red === 'youtube') link = v.videoYoutube;
-        if (red === 'facebook') link = v.videoFacebook;
+        if (red === 'youtube')   link = v.videoYoutube;
+        if (red === 'facebook')  link = v.videoFacebook;
         if (red === 'instagram') link = v.videoInstagram;
-        if (red === 'tiktok') link = v.videoTiktok;
 
         var thumbHTML = '';
-        if (red === 'youtube') {
+        if (red === 'youtube' && link) {
             var ytId = link.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([A-Za-z0-9_-]{11})/);
             var id = ytId ? ytId[1] : '';
-            thumbHTML = '<img src="https://img.youtube.com/vi/'+id+'/hqdefault.jpg" style="width:100%; aspect-ratio:16/9; object-fit:cover;">';
+            thumbHTML = '<img src="https://img.youtube.com/vi/' + id + '/hqdefault.jpg" style="width:100%; aspect-ratio:16/9; object-fit:cover;" alt="' + v.nombre + '">';
+        } else if (v.imagen) {
+            thumbHTML = '<img src="' + v.imagen + '" style="width:100%; aspect-ratio:16/9; object-fit:cover;" alt="' + v.nombre + '" onerror="this.parentElement.style.background=\'#eee\'; this.style.display=\'none\'">';
         } else {
-            thumbHTML = '<div style="width:100%; aspect-ratio:16/9; background:#eee; display:flex; align-items:center; justify-content:center; font-size:2rem;">🎥</div>';
+            thumbHTML = '<div style="width:100%; aspect-ratio:16/9; background:#f0ece8; display:flex; align-items:center; justify-content:center; font-size:2rem;">🎥</div>';
         }
 
-        card.innerHTML = thumbHTML + '<div style="padding:10px;"><strong style="font-size:0.9rem;">'+v.nombre+'</strong></div>';
+        card.innerHTML = thumbHTML + '<div style="padding:10px;"><strong style="font-size:0.85rem; color:#362a22; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + v.nombre + '</strong></div>';
         
-        card.addEventListener('click', function() {
-            _abrirVideoModal(link);
-        });
+        if (link) {
+            card.addEventListener('click', function() { _abrirVideoModal(link); });
+        }
         
         grid.appendChild(card);
     });
@@ -714,13 +809,34 @@ function activarPill(cual) {
     // Mostrar/Ocultar Catálogo Principal (Mis Aventuras)
     var catalogo = document.getElementById('zona-catalogo');
     if (catalogo) {
-        // Solo mostramos el catálogo principal en 'aventuras'
         catalogo.style.display = (cual === 'aventuras') ? 'block' : 'none';
     }
 
     // Si es Música, renderizamos su sección especial
     if (cual === 'musica') {
         renderizarSeccionMusica();
+    }
+
+    // Si es Proyectos, renderizamos su sección
+    if (cual === 'proyectos') {
+        if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
+            renderizarSeccionProyectos();
+        }
+    }
+
+    // Si es Biografía, inicializar YouTube por defecto si ya cargaron los datos
+    if (cual === 'biografia') {
+        if (typeof listaProductos !== 'undefined' && listaProductos.length > 0) {
+            var cont = document.getElementById('contenedorVideosRedes');
+            var ytBtn = document.getElementById('btnRedBioYT');
+            if (cont && ytBtn && !ytBtn.classList.contains('activo')) {
+                ['btnRedBioYT','btnRedBioFB','btnRedBioIG'].forEach(function(id) {
+                    var b = document.getElementById(id); if (b) b.classList.remove('activo');
+                });
+                ytBtn.classList.add('activo');
+                mostrarVideosDeRed('youtube', cont);
+            }
+        }
     }
 }
 

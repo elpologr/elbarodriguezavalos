@@ -309,18 +309,25 @@
             text-align: center;
         }
 
-        /* --- GRILLA DE PRODUCTOS PRINCIPALES --- */
+        /* --- GRILLA DE PRODUCTOS PRINCIPALES — 3 columnas --- */
         .grid-productos {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(320px, calc(50% - 8px)), 1fr));
-            gap: 40px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
             margin-bottom: 4rem;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 900px) {
             .grid-productos {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .grid-productos {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
         }
 
@@ -3388,3 +3395,85 @@ body.modo-oscuro #panelPillBiografia .pill-panel-inner h3 {
 body.modo-oscuro #panelPillBiografia .pill-panel-inner strong {
     color: #7dd4f5 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CORRECCIONES ELBA RODRÍGUEZ — Grids, Modal, Botones Pastel
+   ══════════════════════════════════════════════════════════════ */
+
+/* Grid de 3 columnas para todas las secciones dinámicas */
+#contenedorMusica,
+#contenedorProyectos,
+.grid-aventuras-3col {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 20px;
+    padding: 20px;
+}
+
+@media (max-width: 900px) {
+    #contenedorMusica,
+    #contenedorProyectos,
+    .grid-aventuras-3col {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 550px) {
+    #contenedorMusica,
+    #contenedorProyectos,
+    .grid-aventuras-3col {
+        grid-template-columns: repeat(1, 1fr) !important;
+        padding: 12px;
+    }
+}
+
+/* Grid de 3 columnas para las publicaciones de redes en biografía */
+#contenedorVideosRedes > div {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+@media (max-width: 700px) {
+    #contenedorVideosRedes > div {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    #contenedorVideosRedes > div {
+        grid-template-columns: repeat(1, 1fr) !important;
+    }
+}
+
+/* ── Botones de redes en modo oscuro ── */
+body.modo-oscuro .btn-red-bio.yt  { background: #4a1a1a; color: #ffaaaa; border-color: #6a2a2a; }
+body.modo-oscuro .btn-red-bio.fb  { background: #1a2a4a; color: #aac4ff; border-color: #2a3a6a; }
+body.modo-oscuro .btn-red-bio.ig  { background: #4a1a3a; color: #ffaae0; border-color: #6a2a5a; }
+
+/* ── Texto dinámico de red activa ── */
+body.modo-oscuro .bio-redes-texto-activo { color: #a08878; }
+
+/* ── Panel de videos en modo oscuro ── */
+body.modo-oscuro #panelVideosRedes {
+    background: #1e1812 !important;
+    border-color: #3a3028 !important;
+}
+
+/* ── Modal — forzar que siempre tenga el modal-producto-caja con grilla compacta ── */
+.modal-desc-trasfondo {
+    background: #fdf8f4;
+    border-left: 4px solid #e1b12c;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 16px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.75;
+    color: #4a3b32;
+}
+body.modo-oscuro .modal-desc-trasfondo {
+    background: #231e18 !important;
+    border-color: #c9921e !important;
+    color: #c8b8a8 !important;
+}
+
+/* ── Etiqueta de álbum en tarjetas de música ── */
+.card-musica p { margin: 0; }
