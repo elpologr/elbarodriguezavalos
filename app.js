@@ -793,14 +793,6 @@ _ready(function() {
     document.getElementById('modalQR').addEventListener('click', function(e) {
         if (e.target === this) cerrarModalQR();
     });
-    // Respaldo: asegurar que el botón compartir siempre funcione
-    var btnCompartir = document.querySelector('.red-social.compartir');
-    if (btnCompartir) {
-        btnCompartir.addEventListener('click', function(e) {
-            e.stopPropagation();
-            abrirModalQR();
-        });
-    }
 });
 
 function generarQRElba(texto) {
