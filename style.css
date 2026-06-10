@@ -583,6 +583,8 @@
             padding: 18px 20px;
             background: #fff;
             border-bottom: 1px solid #eee;
+            position: relative;
+            z-index: 10;
         }
         .red-social {
             display: flex;
@@ -595,6 +597,12 @@
             font-weight: 600;
             color: white;
             transition: transform 0.2s, filter 0.2s;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            position: relative;
+            z-index: 1;
+            -webkit-tap-highlight-color: transparent;
         }
         .red-social:hover { transform: translateY(-2px); filter: brightness(1.12); }
         .red-social svg { width: 20px; height: 20px; flex-shrink: 0; }
