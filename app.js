@@ -774,16 +774,15 @@ function actualizarZoom() {}
 
 // ═══════════════════════════════════════════════════════
 // MODAL QR — COMPARTIR PÁGINA
-// QR permanente generado hacia elbarodriguezavalos.com
-// Embebido como base64 en el HTML — funciona sin internet.
+// URL fija: mientras se adquiere el dominio elbarodriguezavalos.com
+// se usa el enlace de GitHub Pages.
 // ═══════════════════════════════════════════════════════
 var URL_PAGINA_ELBA = 'https://elbarodriguezavalos.com';
 
 function abrirModalQR() {
+    // QR permanente embebido en el HTML — no necesita generar nada
     var modal = document.getElementById('modalQR');
     if (modal) modal.classList.add('abierto');
-    // QR permanente ya embebido en el HTML como imagen base64
-    // apunta a elbarodriguezavalos.com (dominio final)
 }
 
 function cerrarModalQR() {
@@ -799,6 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
 
 async function copiarURL() {
     var url = URL_PAGINA_ELBA;
