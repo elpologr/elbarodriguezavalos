@@ -578,7 +578,7 @@
         <p>&copy; 2026 Elba Rodriguez Avalós — Diseñado con orgullo por Yesos Polo Digital</p>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 
     <!-- ═══ MODAL QR — COMPARTIR ═══ -->
     <div class="modal-qr-overlay" id="modalQR">
@@ -594,5 +594,25 @@
             </button>
         </div>
     </div>
+
+    <script>
+    /* ── QR Modal — funciones inline (independiente de app.js) ── */
+    function abrirModalQR() {
+        var modal = document.getElementById('modalQR');
+        if (modal) modal.classList.add('abierto');
+    }
+    function cerrarModalQR() {
+        var modal = document.getElementById('modalQR');
+        if (modal) modal.classList.remove('abierto');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('modalQR');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) cerrarModalQR();
+            });
+        }
+    });
+    </script>
 </body>
 </html>
