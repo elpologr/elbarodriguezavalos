@@ -777,27 +777,48 @@ function actualizarZoom() {}
 // URL fija: mientras se adquiere el dominio elbarodriguezavalos.com
 // se usa el enlace de GitHub Pages.
 // ═══════════════════════════════════════════════════════
+// ─── QR MODAL ───
 var URL_PAGINA_ELBA = 'https://elbarodriguezavalos.com';
 
 function abrirModalQR() {
-    // QR permanente embebido en el HTML — no necesita generar nada
-    var modal = document.getElementById('modalQR');
-    if (modal) modal.classList.add('abierto');
+    var url = URL_PAGINA_ELBA;
+    document.getElementById('qrUrlTexto').textContent = url;
+    document.getElementById('modalQR').classList.add('abierto');
+    generarQRElba(url);
 }
-
 function cerrarModalQR() {
-    var modal = document.getElementById('modalQR');
-    if (modal) modal.classList.remove('abierto');
+    document.getElementById('modalQR').classList.remove('abierto');
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    var modal = document.getElementById('modalQR');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) cerrarModalQR();
-        });
-    }
+_ready(function() {
+    document.getElementById('modalQR').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalQR();
+    });
 });
+
+function generarQRElba(texto) {
+    var canvas = document.getElementById('qrCanvas');
+    var ctx = canvas.getContext('2d');
+    var size = window.innerWidth >= 768 ? 340 : 200;
+    canvas.width = size;
+    canvas.height = size;
+
+    if (window.QRious) {
+        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
+        return;
+    }
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+    script.onload = function() {
+        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
+    };
+    script.onerror = function() {
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(texto);
+        img.onload = function() { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,size,size); ctx.drawImage(img, 0, 0, size, size); };
+    };
+    document.head.appendChild(script);
+}
 
 
 async function copiarURL() {
