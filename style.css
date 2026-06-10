@@ -3088,3 +3088,88 @@ body.modo-oscuro .modal-desc-trasfondo {
 
 /* ── Etiqueta de álbum en tarjetas de música ── */
 .card-musica p { margin: 0; }
+
+/* ═══════════════════════════════════════════
+   MODAL QR — COMPARTIR PÁGINA
+   ═══════════════════════════════════════════ */
+.modal-qr-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+}
+.modal-qr-overlay.abierto { display: flex; }
+.modal-qr-caja {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    max-width: 320px;
+    width: 90%;
+    position: relative;
+}
+@media (min-width: 768px) {
+    .modal-qr-caja { max-width: 580px; padding: 48px 56px 40px; }
+    .modal-qr-titulo { font-size: 1.5rem !important; margin-bottom: 10px !important; }
+    .modal-qr-sub { font-size: 0.95rem !important; margin-bottom: 24px !important; }
+    #qrCanvas { width: 340px !important; height: 340px !important; }
+    .modal-qr-url { font-size: 0.88rem !important; padding: 10px 16px !important; margin-top: 18px !important; }
+    .modal-qr-cerrar { width: 38px !important; height: 38px !important; font-size: 20px !important; top: 16px !important; right: 20px !important; }
+    .btn-copiar-qr { font-size: 1rem !important; padding: 12px 28px !important; margin-top: 20px !important; }
+}
+.modal-qr-cerrar {
+    position: absolute;
+    top: 12px; right: 14px;
+    background: #f0eae4;
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    color: #5c4d43;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+}
+.modal-qr-cerrar:hover { background: #d9cfc8; }
+.modal-qr-titulo { font-size: 1.1rem; font-weight: 700; color: #2a1a2e; margin-bottom: 6px; }
+.modal-qr-sub { font-size: 0.82rem; color: #9a8878; margin-bottom: 18px; }
+.modal-qr-dominio-futuro {
+    font-size: 0.75rem;
+    color: #8c7565;
+    background: #fdf6ef;
+    border: 1px dashed #c9a77e;
+    border-radius: 8px;
+    padding: 7px 12px;
+    margin-bottom: 14px;
+}
+.modal-qr-dominio-futuro strong { color: #5c3d1e; }
+#qrCanvas { border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+.modal-qr-url {
+    font-size: 0.75rem; color: #8c7565; margin-top: 14px;
+    word-break: break-all; background: #f7f3ef;
+    border-radius: 8px; padding: 6px 10px;
+}
+.btn-copiar-qr {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 16px;
+    background: #7a4f7d; color: white;
+    border: none; border-radius: 30px;
+    padding: 10px 22px; font-size: 0.9rem;
+    font-weight: 600; cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, transform 0.15s;
+}
+.btn-copiar-qr:hover { background: #5c3d60; transform: translateY(-1px); }
+body.modo-oscuro .modal-qr-caja { background: #1e1a1f; }
+body.modo-oscuro .modal-qr-titulo { color: #e0d5e8; }
+body.modo-oscuro .modal-qr-sub { color: #9a8878; }
+body.modo-oscuro .modal-qr-url { background: #2a2030; color: #c8a8d8; }
+body.modo-oscuro .btn-copiar-qr { background: #7a4f7d; }
+body.modo-oscuro .btn-copiar-qr:hover { background: #9b6a9e; }
+body.modo-oscuro .modal-qr-dominio-futuro { background: #2a2030; border-color: #7a4f7d; color: #c8a8d8; }
+body.modo-oscuro .modal-qr-dominio-futuro strong { color: #d4a0d8; }
