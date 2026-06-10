@@ -774,18 +774,16 @@ function actualizarZoom() {}
 
 // ═══════════════════════════════════════════════════════
 // MODAL QR — COMPARTIR PÁGINA
-// URL fija: mientras se adquiere el dominio elbarodriguezavalos.com
-// se usa el enlace de GitHub Pages.
+// QR permanente generado hacia elbarodriguezavalos.com
+// Embebido como base64 en el HTML — funciona sin internet.
 // ═══════════════════════════════════════════════════════
-var URL_PAGINA_ELBA = 'https://elpologr.github.io/elbarodriguezavalos/';
+var URL_PAGINA_ELBA = 'https://elbarodriguezavalos.com';
 
 function abrirModalQR() {
-    var url = URL_PAGINA_ELBA;
-    var urlTexto = document.getElementById('qrUrlTexto');
-    if (urlTexto) urlTexto.textContent = url;
     var modal = document.getElementById('modalQR');
     if (modal) modal.classList.add('abierto');
-    generarQRElba(url);
+    // QR permanente ya embebido en el HTML como imagen base64
+    // apunta a elbarodriguezavalos.com (dominio final)
 }
 
 function cerrarModalQR() {
@@ -801,32 +799,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-function generarQRElba(texto) {
-    var canvas = document.getElementById('qrCanvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var size = window.innerWidth >= 768 ? 340 : 200;
-    canvas.width = size;
-    canvas.height = size;
-
-    if (window.QRious) {
-        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
-        return;
-    }
-    var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
-    script.onload = function() {
-        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
-    };
-    script.onerror = function() {
-        var img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(texto);
-        img.onload = function() { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,size,size); ctx.drawImage(img, 0, 0, size, size); };
-    };
-    document.head.appendChild(script);
-}
 
 async function copiarURL() {
     var url = URL_PAGINA_ELBA;
