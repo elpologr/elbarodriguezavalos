@@ -778,16 +778,15 @@ function actualizarZoom() {}
 // se usa el enlace de GitHub Pages.
 // ═══════════════════════════════════════════════════════
 // ─── QR MODAL ───
-var URL_PAGINA_ELBA = 'https://elbarodriguezavalos.com';
+var URL_PAGINA_ELBA = 'https://elpologr.github.io/elbarodriguezavalos/';
 
 function abrirModalQR() {
-    var url = URL_PAGINA_ELBA;
-    document.getElementById('qrUrlTexto').textContent = url;
     document.getElementById('modalQR').classList.add('abierto');
-    generarQRElba(url);
+    document.body.style.overflow = 'hidden';
 }
 function cerrarModalQR() {
     document.getElementById('modalQR').classList.remove('abierto');
+    document.body.style.overflow = '';
 }
 _ready(function() {
     document.getElementById('modalQR').addEventListener('click', function(e) {
