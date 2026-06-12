@@ -780,44 +780,33 @@ function actualizarZoom() {}
 // ─── QR MODAL ───
 var URL_PAGINA_ELBA = 'https://elpologr.github.io/elbarodriguezavalos/';
 
-function abrirModalQR() {
-    document.getElementById('modalQR').classList.add('abierto');
+// Expuestas en window para que el onclick del HTML siempre las encuentre
+window.abrirModalQR = function() {
+    var modal = document.getElementById('modalQR');
+    if (!modal) return;
+    modal.classList.add('abierto');
     document.body.style.overflow = 'hidden';
-}
-function cerrarModalQR() {
-    document.getElementById('modalQR').classList.remove('abierto');
+};
+
+window.cerrarModalQR = function() {
+    var modal = document.getElementById('modalQR');
+    if (!modal) return;
+    modal.classList.remove('abierto');
     document.body.style.overflow = '';
-}
+};
+
+// También como funciones globales normales (doble seguridad)
+function abrirModalQR() { window.abrirModalQR(); }
+function cerrarModalQR() { window.cerrarModalQR(); }
+
 _ready(function() {
-    document.getElementById('modalQR').addEventListener('click', function(e) {
-        if (e.target === this) cerrarModalQR();
-    });
-});
-
-function generarQRElba(texto) {
-    var canvas = document.getElementById('qrCanvas');
-    var ctx = canvas.getContext('2d');
-    var size = window.innerWidth >= 768 ? 340 : 200;
-    canvas.width = size;
-    canvas.height = size;
-
-    if (window.QRious) {
-        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
-        return;
+    var modal = document.getElementById('modalQR');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) window.cerrarModalQR();
+        });
     }
-    var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
-    script.onload = function() {
-        new QRious({ element: canvas, value: texto, size: size, backgroundAlpha: 1, foreground: '#2a1a2e', background: '#fff', level: 'H' });
-    };
-    script.onerror = function() {
-        var img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(texto);
-        img.onload = function() { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,size,size); ctx.drawImage(img, 0, 0, size, size); };
-    };
-    document.head.appendChild(script);
-}
+});
 
 
 async function copiarURL() {
